@@ -1,0 +1,20 @@
+Cannonball Atari Falcon/Mega STE port - v0.27
+
+Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
+
+Changes since v0.26:
+  - Enhanced joystick ports (the two 15-pin sockets on the left side of the
+    STE and the Falcon) are now read, both of them, in addition to the
+    keyboard and the standard joystick port (atari/input.cpp,
+    read_ext_ports()). Jaguar pad or plain joystick on an adapter:
+    left/right = steer, up or B = accelerate, down or C = brake, A (the fire
+    button of a plain joystick) = shift gear, Option = coin/start,
+    Pause = pause.
+    Checked in Hatari only that the ports are detected on the Falcon and read
+    as "nothing pressed" with nothing connected. NOT tested with a pad or a
+    joystick actually plugged in.
+  - Test aid -DPADTRACE_FILE: logs the first values read from those ports.
+
+Layout of this delivery:
+  cannonball_src/      - full source tree, no build artifacts, no ROM data.
+  cannonball_release/  - CB030.TOS / CB060.TOS, roms/, Music/, outrun.ini.

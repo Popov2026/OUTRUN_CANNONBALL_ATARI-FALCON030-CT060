@@ -1,0 +1,117 @@
+# =============================================================================
+# Cannonball - Atari Mega STE Makefile
+#
+# Builds against the m68k-atari-mint cross toolchain (freemint/
+# m68k-atari-mint-gcc, https://github.com/freemint/m68k-atari-mint-gcc).
+# Default target: plain 68000 (Mega STE). For the Falcon see build_atari.sh and
+# README_ATARI.md (CPU=68030/68060, -DPLATFORM_FALCON).
+#
+# The Cygwin-hosted MiNT cross toolchain has no make, so build_atari.sh is the
+# script actually used; this Makefile lists the same sources and flags.
+#
+# Usage (once the toolchain is on PATH):
+#   make -f Makefile.atari              # -> cannonball.tos
+#   make -f Makefile.atari clean
+# =============================================================================
+
+CROSS   ?= m68k-atari-mint-
+CXX     := $(CROSS)g++
+CC      := $(CROSS)gcc
+STRIP   := $(CROSS)strip
+
+SRC := src/main
+
+# NOTE on what is intentionally NOT built for this target:
+#   - src/main/main.cpp          (SDL2 entry point; replaced by main_atari.cpp)
+#   - src/main/sdl2/*            (SDL2 backend; replaced by src/main/atari/*)
+#   (directx/ffeedback.cpp IS built below - it already has a portable
+#    #ifndef WIN32 dummy-stub branch used by every non-Windows Cannonball
+#    port, so it needs no Atari-specific changes)
+#   - src/main/frontend/menu.cpp, cabdiag.cpp, ttrial.cpp
+#         (frontend menu UI; not linked in v1 - see main_atari.cpp header
+#          comment. Nothing in engine/hwvideo/hwaudio references these.)
+# Everything else mirrors cmake/CMakeLists.txt's src_main/src_engine/
+# src_engine_audio/src_hwvideo/src_hwaudio/src_frontend(partial) lists.
+
+SOURCES := \
+	$(SRC)/main_atari.cpp \
+	$(SRC)/romloader.cpp \
+	$(SRC)/roms.cpp \
+	$(SRC)/trackloader.cpp \
+	$(SRC)/video.cpp \
+	$(SRC)/utils.cpp \
+	$(SRC)/frontend/config.cpp \
+	$(SRC)/directx/ffeedback.cpp \
+	$(SRC)/hwvideo/hwroad.cpp \
+	$(SRC)/hwvideo/hwsprites.cpp \
+	$(SRC)/hwvideo/hwtiles.cpp \
+	$(SRC)/hwaudio/segapcm.cpp \
+	$(SRC)/hwaudio/soundchip.cpp \
+	$(SRC)/hwaudio/ym2151.cpp \
+	$(SRC)/engine/oanimseq.cpp \
+	$(SRC)/engine/oattractai.cpp \
+	$(SRC)/engine/obonus.cpp \
+	$(SRC)/engine/ocrash.cpp \
+	$(SRC)/engine/oferrari.cpp \
+	$(SRC)/engine/ohiscore.cpp \
+	$(SRC)/engine/ohud.cpp \
+	$(SRC)/engine/oinitengine.cpp \
+	$(SRC)/engine/oinputs.cpp \
+	$(SRC)/engine/olevelobjs.cpp \
+	$(SRC)/engine/ologo.cpp \
+	$(SRC)/engine/omap.cpp \
+	$(SRC)/engine/omusic.cpp \
+	$(SRC)/engine/ooutputs.cpp \
+	$(SRC)/engine/opalette.cpp \
+	$(SRC)/engine/oroad.cpp \
+	$(SRC)/engine/osmoke.cpp \
+	$(SRC)/engine/osprite.cpp \
+	$(SRC)/engine/osprites.cpp \
+	$(SRC)/engine/ostats.cpp \
+	$(SRC)/engine/otiles.cpp \
+	$(SRC)/engine/otraffic.cpp \
+	$(SRC)/engine/outils.cpp \
+	$(SRC)/engine/outrun.cpp \
+	$(SRC)/engine/audio/osound.cpp \
+	$(SRC)/engine/audio/osoundint.cpp \
+	$(SRC)/atari/video.cpp \
+	$(SRC)/atari/video_falcon.cpp \
+	$(SRC)/atari/input.cpp \
+	$(SRC)/atari/audio.cpp \
+	$(SRC)/atari/timer.cpp \
+	$(SRC)/atari/options.cpp \
+	$(SRC)/atari/modplayer.cpp \
+	$(SRC)/atari/dsp_replay.cpp \
+	$(SRC)/atari/gemredraw.cpp \
+	$(SRC)/atari/screenshot.cpp
+
+ASMSRC  := $(SRC)/atari/video_asm.S $(SRC)/atari/sprite_asm.S $(SRC)/atari/sprite_asm030.S $(SRC)/atari/truecolor_asm.S $(SRC)/atari/road_asm.S $(SRC)/atari/tile_asm.S $(SRC)/atari/dsp_replay_asm.S
+OBJECTS := $(SOURCES:.cpp=.o) $(ASMSRC:.S=.o)
+
+# -mcpu=68000: plain 68000, matches the Mega STE (no 68020+, no FPU - see
+#   task brief). -fno-rtti kept OFF (default) since nothing here has been
+#   confirmed exception/RTTI-free enough to safely strip yet; an easy
+#   follow-up once it links.
+CXXFLAGS := -Wall -O2 -mcpu=68000 -fomit-frame-pointer \
+            -std=gnu++0x -I$(SRC) -DPLATFORM_ATARI
+
+LDFLAGS  := -mcpu=68000
+
+TARGET := cannonball.tos
+
+all: $(TARGET)
+
+$(TARGET): $(OBJECTS)
+	$(CXX) $(LDFLAGS) -o $@ $(OBJECTS) -lgem
+	$(STRIP) $@
+
+%.o: %.cpp
+	$(CXX) $(CXXFLAGS) -c -o $@ $<
+
+%.o: %.S
+	$(CC) -mcpu=68000 -c -o $@ $<
+
+clean:
+	rm -f $(OBJECTS) $(TARGET)
+
+.PHONY: all clean
