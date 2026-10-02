@@ -1,10 +1,10 @@
 # =============================================================================
-# Cannonball - Atari Mega STE Makefile
+# Cannonball - Atari Makefile
 #
 # Builds against the m68k-atari-mint cross toolchain (freemint/
 # m68k-atari-mint-gcc, https://github.com/freemint/m68k-atari-mint-gcc).
-# Default target: plain 68000 (Mega STE). For the Falcon see build_atari.sh and
-# README_ATARI.md (CPU=68030/68060, -DPLATFORM_FALCON).
+# Default target: plain 68000 build. For the Falcon (the supported target) see
+# build_atari.sh and README_ATARI.md (CPU=68060, -DPLATFORM_FALCON).
 #
 # The Cygwin-hosted MiNT cross toolchain has no make, so build_atari.sh is the
 # script actually used; this Makefile lists the same sources and flags.
@@ -88,7 +88,7 @@ SOURCES := \
 ASMSRC  := $(SRC)/atari/video_asm.S $(SRC)/atari/sprite_asm.S $(SRC)/atari/sprite_asm030.S $(SRC)/atari/truecolor_asm.S $(SRC)/atari/road_asm.S $(SRC)/atari/tile_asm.S $(SRC)/atari/dsp_replay_asm.S
 OBJECTS := $(SOURCES:.cpp=.o) $(ASMSRC:.S=.o)
 
-# -mcpu=68000: plain 68000, matches the Mega STE (no 68020+, no FPU - see
+# -mcpu=68000: plain 68000, plain 68000 (no 68020+, no FPU - see
 #   task brief). -fno-rtti kept OFF (default) since nothing here has been
 #   confirmed exception/RTTI-free enough to safely strip yet; an easy
 #   follow-up once it links.

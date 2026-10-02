@@ -1,6 +1,8 @@
-# Cannonball - Atari port (Mega STE / Falcon 030 / Falcon 060)
+# Cannonball - Atari Falcon port (CT60 / CT63, 68060)
 
-A port of the Cannonball OutRun engine to the Atari. The engine, the chip
+A port of the Cannonball OutRun engine to the Atari Falcon. **A 68060 accelerator
+(CT60 / CT63) is required**: on a stock 16 MHz Falcon 030 the game runs but is not
+usable (about one picture every 1.3 s). The engine, the chip
 emulation (`hwvideo/`, `hwaudio/`) and the game logic are the original C++;
 only the platform layer is new (`src/main/atari/`, `src/main/main_atari.cpp`),
 plus the changes needed to compile with the MiNT cross compiler and a set of
@@ -61,10 +63,7 @@ Cygwin package, installed in `C:\cygwin64\opt\cross-mint`). It has no `make`,
 so `build_atari.sh` compiles every source and links:
 
 ```bash
-# Mega STE (plain 68000, 16-colour bitplane screen) - defaults to OUTRUN.TOS
-bash ./build_atari.sh
-
-# Falcon 030 (16-bit true colour)
+# Falcon 030 (not usable on a stock 16 MHz Falcon)
 CPU=68030 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB030.TOS bash ./build_atari.sh
 
 # Falcon with a 68060 accelerator
@@ -172,14 +171,12 @@ hatari --machine falcon --memsize 14 --dsp none --tos tos.img \
        --harddrive <folder> --auto CB030.TOS
 # 68060 with fast RAM (fastest configuration measured):
 hatari --machine falcon --memsize 14 --ttram 32 --cpulevel 6 --cpuclock 32 --addr24 false ...
-# Mega STE:
-hatari --machine megaste --memsize 10 --tos tos.img --harddrive <folder> --auto OUTRUN.TOS
 ```
 
 `tos.img` is EmuTOS 1.4 (bundled with Hatari). ROM loading takes a while of
 emulated time (Hatari's GEMDOS drive is slow). Keys: cursors, space = accelerate,
 left ctrl = brake, left alt/shift = gears, Enter = coin/start, V = viewpoint,
-P = pause (shows a "PAUSE" caption, Falcon only for now), F9 = screenshot
+P = pause (shows a "PAUSE" caption), F9 = screenshot
 (`SHOTnnnn.PNG` in the program's folder), Esc or F10 = quit to the desktop
 (shows a confirmation: up = yes, down = cancel).
 
@@ -191,10 +188,10 @@ folded into the same `keys[]` array as the keyboard - both work at the same
 time, nothing is disabled by having a joystick plugged in. In Hatari, map a
 host joystick/gamepad or the numeric keypad to ST joystick port 1 (the
 `--joystick` option or the GUI's Joysticks panel; port 1, not port 0/mouse).
-The enhanced joystick ports (the two 15-pin sockets on the left side of the STE and the Falcon) are read
+The enhanced joystick ports (the two 15-pin sockets on the left side of the Falcon) are read
 too, both of them, with a Jaguar pad or a plain joystick on an adapter: left/right = steer, up or B =
 accelerate, down or C = brake, A (the fire button of a plain joystick) = shift gear, Option = coin/start,
-Pause = pause. In Hatari these are joystick ports 2 and 3 ("STE joypad A/B").
+Pause = pause. In Hatari these are joystick ports 2 and 3.
 
 The keyboard is read through an interrupt handler (`kbd_asm.S`) that replaces the ACIA vector while the
 game runs and restores it on exit; `-DKEYTRACE` prints every key change.
@@ -258,9 +255,8 @@ on its own, this is the first place to look.
 
 ## How the port works
 
-* **Video**: the engine composes a 320x224 buffer of palette indices. Falcon:
-  one table lookup per pixel into 16-bit RGB565. Mega STE: a per-frame 16-colour
-  palette is chosen from a histogram and the image is converted to bitplanes.
+* **Video**: the engine composes a 320x224 buffer of palette indices, then
+  one table lookup per pixel converts it into 16-bit RGB565.
 * **Timing (Falcon)**: game logic is decoupled from drawing. It always runs
   30 steps per second of real time (`main_atari.cpp`, fixed timestep); when
   drawing is slower, several steps run per picture. Screen memory is triple
@@ -279,9 +275,8 @@ on its own, this is the first place to look.
 * **Memory**: `new` returns zeroed memory (TOS does not zero it; the engine
   relies on it). DMA sound and screen buffers are allocated explicitly in ST-RAM;
   everything else can live in fast RAM.
-* **Assembler** (`src/main/atari/*.S`): sprite scanlines (`sprite_asm.S` for the
-  68000, `sprite_asm030.S` for 030/060 with a clip-free fast path), road spans,
-  8x8 tiles, palette histogram / bitplane conversion, 16-bit conversion.
+* **Assembler** (`src/main/atari/*.S`): sprite scanlines (`sprite_asm030.S` for
+  030/060 with a clip-free fast path), road spans, 8x8 tiles, 16-bit conversion.
 
 ## Measured speed (Hatari, emulated time; 68060 emulation is "experimental")
 
@@ -289,9 +284,8 @@ Full resolution, driving (the demo driving itself), seconds per picture:
 
 | Machine | Picture | Game speed |
 |---|---|---|
-| Falcon 030 @ 16 MHz | ~1.3 s | ~35-55 % of real time |
-| 68060 @ 32 MHz, fast RAM | ~0.065 s (15/s) | 100 % of real time |
+| 68060 @ 32 MHz, fast RAM (CT60) | ~0.065 s (15/s) | 100 % of real time |
+| Stock Falcon 030 @ 16 MHz | ~1.3 s | not usable |
 
-The Mega STE runs at a fraction of a frame per second and is not playable.
 Nothing here has been checked on real hardware, and sound output has not been
 listened to.

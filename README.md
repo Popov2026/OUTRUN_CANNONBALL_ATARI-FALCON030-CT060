@@ -1,13 +1,15 @@
-# OutRun – Cannonball for Atari Falcon 030 / CT60 (68060) / Mega STE
+# OutRun – Cannonball for Atari Falcon CT60 / CT63 (68060)
 
 A port of Chris White's **[Cannonball](https://github.com/djyt/cannonball)** engine (a C++
-rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to **Atari** computers:
+rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atari Falcon**:
 
-| Target | Executable | CPU | Video | Status |
-|---|---|---|---|---|
-| Falcon 030 | `CB030.TOS` | 68030 @ 16 MHz | 16-bit true colour (RGB565) | Works, slow (~35-55 % of real speed) |
-| Falcon + CT60 | `CB060.TOS` | 68060 (+ Fast RAM) | 16-bit true colour (RGB565) | **Full speed** (100 % real time, measured in Hatari) |
-| Mega STE | `OUTRUN.TOS` | 68000 | 16 colours, bitplanes | Builds and runs, but not playable (< 1 frame/s) |
+| Machine | Executable | CPU | Status |
+|---|---|---|---|
+| Falcon + CT60 / CT63 | `CB060.TOS` | 68060 (+ Fast RAM) | **Full speed** (100 % real time, measured in Hatari) |
+| Stock Falcon 030 | `CB030.TOS` | 68030 @ 16 MHz | **Not usable**: about one picture every 1.3 s |
+
+> **A 68060 accelerator (CT60 / CT63) is required to play.** A stock 16 MHz Falcon is far too
+> slow: `CB030.TOS` starts and runs, but the game is unplayable on it.
 
 **Current version: v0.27**. The full changelog is in [`VERSION.txt`](VERSION.txt).
 
@@ -38,8 +40,8 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to **Atari** 
 ```
 .
 ├── dist/                    ← ready-to-run binaries (v0.27)
-│   ├── CB030.TOS            Falcon 68030
-│   ├── CB060.TOS            Falcon + CT60 / 68060 (try this one first)
+│   ├── CB030.TOS            stock Falcon 68030 (not usable at 16 MHz)
+│   ├── CB060.TOS            Falcon + CT60 / CT63 (68060): the one to use
 │   ├── outrun.ini           preset options (.mod music played by the DSP)
 │   ├── VERSION.txt
 │   ├── roms/                ← put YOUR ROMs here (see roms.txt / README.txt)
@@ -77,13 +79,12 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to **Atari** 
 
 Copy these to the Atari's disk, all in one folder:
 
-- the contents of `dist/`: `CB030.TOS` and/or `CB060.TOS`, `outrun.ini`, `roms/`, `Music/`;
+- the contents of `dist/`: `CB060.TOS`, `outrun.ini`, `roms/`, `Music/`;
 - the `res/` folder from the root of this repository.
 
 ```
 C:\OUTRUN\
     CB060.TOS
-    CB030.TOS
     outrun.ini
     res\
     roms\
@@ -117,7 +118,7 @@ the GEMDOS 8.3 limit. You have two choices:
 
 ### 3. Run
 
-Double-click **`CB060.TOS`** (Falcon with a CT60) or **`CB030.TOS`** (stock Falcon).
+Double-click **`CB060.TOS`** (Falcon with a CT60 / CT63).
 Loading the ROMs takes a few seconds, then the game starts straight into attract mode,
 with no menu. Press **Return** to insert a coin and start a race.
 
@@ -144,7 +145,7 @@ with no menu. Press **Return** to insert a coin and start a race.
 Left / right to steer, forward to accelerate, back to brake, fire to change gear. The
 keyboard and the joystick work at the same time.
 
-### Enhanced joystick ports (the two 15-pin sockets of the STE / Falcon), new in v0.27
+### Enhanced joystick ports (the two 15-pin sockets of the Falcon), new in v0.27
 
 These ports take a Jaguar pad, or a plain joystick on an adapter:
 
@@ -171,7 +172,7 @@ Each option is described in [`outrun.ini.example`](outrun.ini.example).
 |---|---|---|---|
 | `shadows` | 0 / 1 | 1 | Shadows under the cars and the scenery (0 gives about +4 % frames/s) |
 | `shadow_min_z` | 0..0x1ff | 0 | With shadows on, only draw them for nearby objects |
-| `scenery` | 0 / 1 | 1 | 0 = no trees, signs or buildings. **By far the biggest speed-up**, recommended on a 68030 |
+| `scenery` | 0 / 1 | 1 | 0 = no trees, signs or buildings. **By far the biggest speed-up** |
 | `vscale` | 50..100 | 100 | % of the 224 lines that are computed (67 gives +17 %, 50 gives +26 %) |
 | `road_hres` | 0 / 1 | 0 | Road computed at half horizontal resolution (+5 %) |
 | `cadence` | 0..4 | 0 | Game steps between two frames: 0 = auto, 1 = 30 fps, 2 = 15, 3 = 10, 4 = 7.5 |
@@ -183,7 +184,6 @@ Each option is described in [`outrun.ini.example`](outrun.ini.example).
 | `freemint` | 0 / 1 | 1 | Long ROM names (1) or names renamed to 8.3 (0) |
 
 The supplied `dist/outrun.ini` sets `sound=1`, `mod=1` and `mod_dsp=1`.
-**Tips for a stock Falcon 030:** `scenery=0`, `vscale=67`, `mod=1`.
 
 ---
 
@@ -216,22 +216,16 @@ much less CPU time than emulating the YM2151.
 
 ## Running in the Hatari emulator
 
-Put `CB030.TOS` (or `CB060.TOS`), `roms/`, `res/` and `outrun.ini` in one folder, then
+Put `CB060.TOS`, `roms/`, `res/` and `outrun.ini` in one folder, then
 mount that folder as a GEMDOS drive:
 
 ```bash
-# Falcon 030
-hatari --machine falcon --memsize 14 --dsp none --tos tos.img \
-       --harddrive <folder>
-
-# Falcon + 68060 with Fast RAM (fastest configuration)
+# Falcon + 68060 with Fast RAM (CT60-like configuration)
 hatari --machine falcon --memsize 14 --ttram 32 --cpulevel 6 --cpuclock 32 \
        --addr24 false --tos tos.img --harddrive <folder>
 
 # For .mod music played by the DSP: replace --dsp none with --dsp emu
 
-# Mega STE
-hatari --machine megaste --memsize 10 --tos tos.img --harddrive <folder>
 ```
 
 These commands were tested with `tos.img` = EmuTOS 1.4, which comes with Hatari.
@@ -242,8 +236,8 @@ in the `AUTO\` folder, renamed to `.PRG`. If you still use `--auto`, give it a f
 does not exist (`--auto NOFILE.TOS`). Otherwise the game restarts by itself as soon as you
 quit it. Details are in `README_ATARI.md`.
 
-For joysticks, map a host controller to ST **joystick port 1**, and to ports **2 / 3**
-("STE joypad A/B") for the enhanced ports.
+For joysticks, map a host controller to **joystick port 1**, and to Hatari joystick ports
+**2 / 3** for the enhanced ports.
 
 ---
 
@@ -258,9 +252,6 @@ For joysticks, map a host controller to ST **joystick port 1**, and to ports **2
 ### Commands
 
 ```bash
-# Mega STE (68000, 16 colours) -> OUTRUN.TOS
-bash ./build_atari.sh
-
 # Falcon 030 -> CB030.TOS
 CPU=68030 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB030.TOS bash ./build_atari.sh
 
@@ -280,8 +271,6 @@ Important points:
   libraries assume an FPU, which the Falcon does not have. With the wrong library, the binary
   crashes right after `Pexec`, before `main()`.
 - **`OUT` must stay 8.3**: at most 8 characters, plus 3 for the extension.
-- You can also use `make -f Makefile.atari`, which builds the same sources for the
-  Mega STE.
 
 ### Useful build flags (pass them in `EXTRA`)
 
@@ -313,24 +302,21 @@ original C++ code. The port adds three things:
 In short:
 
 - **Video.** The engine composes a 320×224 picture of palette indices.
-  - On the **Falcon**, each pixel goes through a lookup table to 16-bit RGB565
+  - Each pixel goes through a lookup table to 16-bit RGB565
     (`truecolor_asm.S`). Rows that have not changed are not converted again (row cache). The
     screen is triple-buffered, and the video mode is chosen by the size available: VGA
     320×240 or RGB/TV 384×240 overscan, otherwise interlaced 320×400.
-  - On the **Mega STE**, a 16-colour palette is chosen for each frame from a histogram, then
-    the picture is converted to bitplanes.
 - **Timing.** Game logic always runs at 30 steps per second of real time. When drawing is
   slower, several steps are computed per frame, so the game keeps its speed and only
   smoothness drops.
 - **Sound.** The YM2151 (FM) and the SegaPCM are emulated, then mixed and sent to the
-  STE / Falcon DMA sound at 12,517 Hz, with four buffers. Optionally, `.mod` files are played
+  Falcon DMA sound at 12,517 Hz, with four buffers. Optionally, `.mod` files are played
   by the CPU or by the DSP56001 (see above).
 - **Input.** An assembler keyboard interrupt handler (`kbd_asm.S`) replaces the ACIA vector
   while the game runs and restores it on exit. It reads the IKBD joystick and the enhanced
   joystick ports.
-- **68k assembler** (`src/main/atari/*.S`): sprite scanlines (68000 and 030/060 versions),
-  road spans, 8×8 tiles, SegaPCM channels, chunky-to-planar and 16-bit conversion, DSP
-  replay.
+- **68k assembler** (`src/main/atari/*.S`): sprite scanlines (with a 030/060 fast path),
+  road spans, 8×8 tiles, SegaPCM channels, 16-bit conversion, DSP replay.
 - **Memory.** `operator new` zeroes memory, because TOS does not and the engine relies on
   it. The screen and sound buffers live in ST-RAM; everything else can go in Fast RAM.
 
@@ -345,9 +331,8 @@ resolution:
 
 | Machine | Time per frame | Game speed |
 |---|---|---|
-| Falcon 030 @ 16 MHz | ~1.3 s | ~35-55 % of real time |
-| 68060 @ 32 MHz + Fast RAM | ~0.065 s (15 frames/s) | **100 %** of real time |
-| Mega STE | several seconds | not playable |
+| 68060 @ 32 MHz + Fast RAM (CT60) | ~0.065 s (15 frames/s) | **100 %** of real time |
+| Stock Falcon 030 @ 16 MHz | ~1.3 s | not usable |
 
 Effect of `vscale` on the emulated 68060: 100 gives 18.3 fps, 67 gives 21.5 fps and 50
 gives 23.1 fps.
@@ -361,13 +346,12 @@ gives 23.1 fps.
 - The enhanced joystick ports (v0.27) have not been tested with a pad actually plugged in.
 - Cannonball's frontend menus (settings, Time Trial…) are not included: the game starts
   straight away.
-- Pause is only available on the Falcon.
 - There is no analogue steering wheel or pedal support.
 - On real hardware without FreeMiNT, you need `freemint=0` and ROMs renamed to 8.3.
 - Keyboard: the handler disables IKBD mouse and joystick packets at start-up. If a key ever
   seems stuck "down", that is the first place to look (`atari/input.cpp`).
 
-Feedback is welcome, especially from real hardware (Falcon 030, CT60/CT63, Jaguar pads).
+Feedback is welcome, especially from real hardware (CT60/CT63, Jaguar pads).
 
 ---
 
@@ -391,7 +375,7 @@ Feedback is welcome, especially from real hardware (Falcon 030, CT60/CT63, Jagua
   [Reassembler blog](http://reassembler.blogspot.com/)). This port would not exist without
   their work.
 - **SoundTracker DSP replay**: Simplet / ABSTRACT (`dsptrack` archive, dhs.nu).
-- **Atari port** for Falcon 030 / CT60 / Mega STE: Popov2026.
+- **Atari Falcon port** (CT60 / CT63): Popov2026.
 
 This repository is distributed under the **Cannonball licence** ([`docs/license.txt`](docs/license.txt)):
 

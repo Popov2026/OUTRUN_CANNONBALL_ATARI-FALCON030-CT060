@@ -1,7 +1,7 @@
-Cannonball Atari Falcon/Mega STE port - v0.27 (compiled release)
-See cannonball_src/VERSION.txt for the changelog since v0.26.
+Cannonball Atari Falcon (CT60 / CT63) port - v0.27 (compiled release)
+See VERSION.txt at the root of the repository for the changelog since v0.26.
 
-CB030.TOS - 68030/Falcon
-CB060.TOS - 68060/CT60 (test this one first)
+CB030.TOS - 68030/Falcon (NOT usable on a stock 16 MHz Falcon: far too slow)
+CB060.TOS - 68060/CT60 / CT63 (the one to use)
 outrun.ini - mod=1, mod_dsp=1 (.mod music played by the DSP; set mod_dsp=0 for CPU mixing,
              mod=0 for the original FM music)

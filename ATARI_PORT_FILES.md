@@ -1,7 +1,7 @@
 # Atari port files — what each one does
 
 This document only covers the code written or modified for the Atari port
-(Mega STE + Falcon 030/060). The rest of the Cannonball engine (`src/main/engine/`,
+(Falcon with a CT60 / CT63 68060 accelerator; a stock 16 MHz Falcon 030 is not usable). The rest of the Cannonball engine (`src/main/engine/`,
 `src/main/frontend/`, etc., apart from the hooks listed at the bottom of this page) is
 the project's original code and is not documented here. All credit for the engine,
 the OutRun reverse engineering and Cannonball itself goes to
@@ -32,9 +32,7 @@ Contains:
     at the top of the function).
   - `PLATFORM_FALCON` + `OLD_PACING`: older version of the loop,
     kept for comparison.
-  - Without `PLATFORM_FALCON` (Mega STE): simple loop locked to the VBL.
-- `main()`: boot sequence (supervisor mode, Mega STE detection via the
-  machine cookie, loading config/options/ROMs, video/sound/input init,
+- `main()`: boot sequence (supervisor mode, loading config/options/ROMs, video/sound/input init,
   straight into the game — no frontend menu in this port).
 - Diagnostic aids enabled by build flags (none is active by default):
   `STARTUP_DEBUG` (checkpoints printed at each boot step), `EARLY_RETURN_TEST`
@@ -53,20 +51,17 @@ Contains:
 | `options.cpp` / `.hpp` | Reads `outrun.ini` (next to `roms\` — name chosen on purpose to stay 8.3: 6+3 characters, see `freemint` below): shadows, draw distance, `cadence`, `sound`, `music` (0/1, turns off the FM music without touching the sound effects), `mod`/`mod_dsp`, `freemint` (0/1, default 1: keeps the original ROM names, needs FreeMiNT on real hardware; 0 = expects a ROM set renamed to 8.3, see `romloader.cpp` and the table in `README_ATARI.md`), and `road_hres` (see below — **must stay 0 by default**, it is a visually risky optimisation not yet validated). |
 | `src/main/romloader.cpp` | `RomLoader::load_rom()`: when `atari_opt.freemint==0`, remaps the ROM names (`epr-10380b.133` → `E10380b.133`) before opening the file — see `atari_short_name()`. By default (`freemint=1`) the original names are used as they are. |
 | `timer.cpp` / `.hpp` | Pacing based on the 200 Hz system counter (`_hz_200`, address 0x4BA) rather than on `SDL_GetTicks`. `frame_pace()` caps at 60 Hz without ever catching up on a delay with a burst. |
-| `audio.cpp` / `.hpp` | STE DMA sound backend — takes the buffers already synthesised by the engine (YM2151 + SegaPCM, untouched), mixes them with the `.mod` player if active (`-DMOD_MUSIC`), and pushes the result to the STE DMA. |
+| `audio.cpp` / `.hpp` | DMA sound backend — takes the buffers already synthesised by the engine (YM2151 + SegaPCM, untouched), mixes them with the `.mod` player if active (`-DMOD_MUSIC`), and pushes the result to the sound DMA. |
 | `modplayer.cpp` / `.hpp` | `.mod` file player (Amiga ProTracker, 4 channels) that plays the game music instead of the FM chip when `mod=1` (`Music\TRACK1.MOD` to `TRACK4.MOD`, supplied by the user). Detects both header variants (15 and 31 samples), handles the common effects (arpeggio, portamento, vibrato, volume slide, position jump, tempo). Mixed on the CPU by default. With `mod_dsp=1`, the module is played by the DSP (`dsp_replay.*`): the replay interrupt advances the pattern and reads the samples, and `mix()` then does nothing. |
 | `dsp_replay.cpp` / `.hpp` / `dsp_replay_asm.S` / `dsp_tracker_p56.h` | `.mod` playback by the DSP56001 (`mod_dsp` option). The DSP side is the SoundTracker replay by Simplet / ABSTRACT (`dsptrack` archive on dhs.nu), unmodified (`dsp_tracker_p56.h`). The 68k side runs from a 50 Hz Timer A interrupt: each frame it sends the DSP the volume and pitch of each voice, then the sample bytes requested (nothing is stored on the DSP, so there is no limit on module size). Six voices: the module's 4, plus a stereo pair carrying the game's FM + PCM mix, since the DAC only listens to the DSP while this mode is active. Checked under Hatari `--dsp emu` (capture of the samples sent to the DAC). |
 | `gemredraw.cpp` | Asks the AES to redraw the whole screen when the game exits (only called under MiNT, i.e. under a multitasking AES such as XaAES, which does not redraw the desktop by itself). |
 | `screenshot.cpp` / `.hpp` | F9 screenshot, saved as `SHOTnnnn.PNG` in the program's folder. |
-| `video.cpp` / `.hpp` | Mega STE video backend (16 colours, histogram reduction + chunky-to-planar conversion). The engine composes a palette-index picture in a shared buffer (`src/main/video.cpp`, unmodified); this file converts it for the real hardware. |
-| `video_falcon.cpp` | Falcon video backend: 16-bit true colour (RGB565), a single 65536-colour lookup table, no palette reduction or bitplane packing (unlike the STE). |
+| `video_falcon.cpp` | Falcon video backend: the engine composes a palette-index picture in a shared buffer (`src/main/video.cpp`); this file converts it to 16-bit true colour (RGB565) through a single 65536-colour lookup table. |
 | `road_asm.S` | Inner loops of the road renderer (`atari_fill16`, `atari_road_copy1`, `atari_road_copy2` + `_half` variants for `road_hres`). Called from `hwvideo/hwroad.cpp`. |
-| `sprite_asm.S` | 68000 version of the sprite rendering inner loop (one line of one sprite, horizontal zoom). |
-| `sprite_asm030.S` | Same contract as `sprite_asm.S`, with a fast path for 68030/68060 (chosen automatically according to the target CPU). |
+| `sprite_asm030.S` | Inner loop of the sprite renderer (one line of one sprite, horizontal zoom), with a fast path for 68030/68060. |
 | `tile_asm.S` | Draws an 8x8 tile (4 bits/pixel, 0 = transparent) into the index buffer. |
 | `truecolor_asm.S` | Final index → RGB565 conversion (`dst[i] = pal[px[i]]`), Falcon-specific. |
 | `pcm_asm.S` | Inner loop of one SegaPCM channel (sample fetch, volume, looping). |
-| `video_asm.S` | Palette histogram + chunky-to-planar conversion, pure 68000 (no 32-bit multiply, no 020+ instructions) for the STE. |
 
 ## Hooks in the shared engine (`#ifdef PLATFORM_ATARI` / `PLATFORM_FALCON`)
 
@@ -80,14 +75,14 @@ were touched for the port.
 | `src/main/engine/oroad.cpp` | Calls the assembler road routines (`atari_road_copy*`) instead of the generic C++ when `PLATFORM_ATARI` is defined. |
 | `src/main/engine/osprites.cpp` | Calls `atari_sprite_line` instead of the generic C++ loop. `finalise_sprites()` also has its own fine-grained timing (`dosprite`/`blit`/`trafficlogic`/`trafficsnd`) under `-DPERF_PRINT`; `-DLOGIC50_FILE` also writes it to `SPR.TXT` with the number of active sprites. Finding from this work: `nsprites` jumps from ~4-22 (level 1) to 63-64 (level 2, the area reported as slow) — confirms "too many sprites" without yet pinning down which loop in `sprite_copy()` (beyond what `dosprite`/`blit` already measure) dominates the cost. |
 | `src/main/hwvideo/hwroad.cpp` | Switches between `atari_road_copy1/2` and their `_half` variants according to `atari_opt.road_hres` (see table above). |
-| `src/main/hwvideo/hwsprites.cpp` | Calls the assembler sprite routines (`sprite_asm.S`/`sprite_asm030.S`). |
+| `src/main/hwvideo/hwsprites.cpp` | Calls the assembler sprite routines (`sprite_asm030.S`). |
 | `src/main/hwvideo/hwtiles.cpp` | Calls `atari_tile8` (Falcon only) instead of the generic C++ renderer. |
 | `src/main/hwaudio/segapcm.cpp` | Calls `atari_pcm_channel` instead of the generic C++ loop for each PCM channel. Also contains the `-DPERF_PRINT -DPCM_MEASURE_FILE` per-channel cost measurement (written to `PCMLOG.TXT`, not to the console — see the methodology note below). |
 | `src/main/engine/omusic.cpp` | `play_music()`: in a `-DMOD_MUSIC` build, starts the `.mod` player instead of the YM2151 command for the 3 selectable tracks (not Last Wave, which is triggered elsewhere). Otherwise unchanged (normal YM2151 command), with the `atari_opt.music` check to turn off the music without touching the sound effects. |
 | `src/main/engine/ostats.cpp` | `OStats::init()`: `-DFORCE_CREDIT_TEST` test aid (credit=1 at boot, never in a normal build) — used because synthetic key injection in Hatari never proved reliable for automatically validating a screen that needs a credit. |
 | `src/main/main.hpp` | Shared declarations specific to the Atari target (types, macros). |
 | `src/main/engine/outrun.cpp` | `jump_table()`: adds `-DLOGIC50_FILE` (with `-DPERF_PRINT`), which writes the cost breakdown (switch/inputs/sprites/objects/traffic/ferrari/crash/copy) to `LOGIC.TXT`, correlated with the stage and the position on the track — used to investigate the slowdown reported in the level 2 tunnel. |
-| `src/main/video.cpp` | Hands the index buffer composed by the engine to the `atari/video.cpp` or `atari/video_falcon.cpp` backend depending on the target. |
+| `src/main/video.cpp` | Hands the index buffer composed by the engine to the `atari/video_falcon.cpp` backend. |
 
 ## Documentation
 

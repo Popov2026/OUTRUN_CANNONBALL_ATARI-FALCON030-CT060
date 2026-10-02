@@ -1,10 +1,10 @@
-Cannonball Atari Falcon/Mega STE port - v0.27
+Cannonball Atari Falcon (CT60 / CT63) port - v0.27
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
 Changes since v0.26:
   - Enhanced joystick ports (the two 15-pin sockets on the left side of the
-    STE and the Falcon) are now read, both of them, in addition to the
+    Falcon) are now read, both of them, in addition to the
     keyboard and the standard joystick port (atari/input.cpp,
     read_ext_ports()). Jaguar pad or plain joystick on an adapter:
     left/right = steer, up or B = accelerate, down or C = brake, A (the fire
