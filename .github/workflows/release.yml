@@ -1,10 +1,17 @@
 # Builds the ready-to-run package from dist/ + res/ and publishes it as a GitHub release
-# when a version tag (v*) is pushed. No ROMs and no .mod music are ever packaged.
+# when a version tag (v*) is pushed, or when run by hand from the Actions tab
+# (the tag is then created by the release). No ROMs and no .mod music are ever packaged.
 name: Release
 
 on:
   push:
     tags: ['v*']
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version tag to publish (e.g. v0.27)'
+        required: true
+        default: 'v0.27'
 
 permissions:
   contents: write
@@ -16,9 +23,11 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Build package
+        env:
+          VERSION: ${{ inputs.version || github.ref_name }}
         run: |
           set -e
-          V="$GITHUB_REF_NAME"
+          V="$VERSION"
           D=pkg/OUTRUN
           mkdir -p "$D/roms" "$D/Music"
           cp dist/CB030.TOS dist/CB060.TOS dist/outrun.ini dist/VERSION.txt outrun.ini.example "$D/"
@@ -36,12 +45,14 @@ jobs:
       - name: Publish release
         env:
           GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version || github.ref_name }}
         run: |
-          V="$GITHUB_REF_NAME"
+          V="$VERSION"
           if gh release view "$V" >/dev/null 2>&1; then
             gh release upload "$V" "cannonball_falcon_${V}.zip" --clobber
           else
             gh release create "$V" "cannonball_falcon_${V}.zip" \
+              --target "$GITHUB_SHA" \
               --title "OutRun Cannonball Falcon ${V}" \
               --notes-file .github/release-notes.md
           fi
