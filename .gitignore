@@ -282,8 +282,9 @@ roms/*
 # ROMs (copyright SEGA) and user-supplied .mod music are never committed
 roms/*
 !roms/roms.txt
+!/dist/
 dist/roms/*
-!dist/roms/LISEZMOI.txt
+!dist/roms/README.txt
 !dist/roms/roms.txt
 *.MOD
 *.mod

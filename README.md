@@ -1,85 +1,84 @@
-# OutRun – Cannonball pour Atari Falcon 030 / CT60 (68060) / Mega STE
+# OutRun – Cannonball for Atari Falcon 030 / CT60 (68060) / Mega STE
 
-Portage du moteur **[Cannonball](https://github.com/djyt/cannonball)** de Chris White
-(réécriture en C++ du code 68000/Z80 de la borne d'arcade **OutRun** de SEGA) vers les
-ordinateurs **Atari** :
+A port of Chris White's **[Cannonball](https://github.com/djyt/cannonball)** engine (a C++
+rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to **Atari** computers:
 
-| Cible | Exécutable | Processeur | Vidéo | État |
+| Target | Executable | CPU | Video | Status |
 |---|---|---|---|---|
-| Falcon 030 | `CB030.TOS` | 68030 @ 16 MHz | 16 bits true color (RGB565) | Fonctionne, lent (~35-55 % de la vitesse réelle) |
-| Falcon + CT60 | `CB060.TOS` | 68060 (+ Fast RAM) | 16 bits true color (RGB565) | **Plein régime** (100 % vitesse réelle mesurée sous Hatari) |
-| Mega STE | `OUTRUN.TOS` | 68000 | 16 couleurs, bitplanes | Compile et tourne, mais injouable (< 1 image/s) |
+| Falcon 030 | `CB030.TOS` | 68030 @ 16 MHz | 16-bit true colour (RGB565) | Works, slow (~35-55 % of real speed) |
+| Falcon + CT60 | `CB060.TOS` | 68060 (+ Fast RAM) | 16-bit true colour (RGB565) | **Full speed** (100 % real time, measured in Hatari) |
+| Mega STE | `OUTRUN.TOS` | 68000 | 16 colours, bitplanes | Builds and runs, but not playable (< 1 frame/s) |
 
-**Version actuelle : v0.27**. Le journal complet des changements est dans [`VERSION.txt`](VERSION.txt).
+**Current version: v0.27**. The full changelog is in [`VERSION.txt`](VERSION.txt).
 
-> ⚠️ **Les ROMs d'OutRun ne sont pas fournies** (propriété de SEGA). Tu dois utiliser ton
-> propre dump du jeu, **révision B** : voir [Installer les ROMs](#2-installer-les-roms).
-
----
-
-## Sommaire
-
-1. [Contenu du dépôt](#contenu-du-dépôt)
-2. [Démarrage rapide](#démarrage-rapide)
-3. [Commandes de jeu](#commandes-de-jeu)
-4. [Fichier d'options `outrun.ini`](#fichier-doptions-outrunini)
-5. [Musique `.mod` (option)](#musique-mod-option)
-6. [Lancer sous l'émulateur Hatari](#lancer-sous-lémulateur-hatari)
-7. [Compiler depuis les sources](#compiler-depuis-les-sources)
-8. [Fonctionnement du portage](#fonctionnement-du-portage)
-9. [Performances mesurées](#performances-mesurées)
-10. [Limites connues et points non testés](#limites-connues-et-points-non-testés)
-11. [Documentation détaillée](#documentation-détaillée)
-12. [Crédits et licence](#crédits-et-licence)
+> ⚠️ **The OutRun ROMs are not included** (they belong to SEGA). You need your own dump of
+> the game, **revision B**: see [Install the ROMs](#2-install-the-roms).
 
 ---
 
-## Contenu du dépôt
+## Contents
+
+1. [Repository layout](#repository-layout)
+2. [Quick start](#quick-start)
+3. [Controls](#controls)
+4. [Options file `outrun.ini`](#options-file-outrunini)
+5. [`.mod` music (optional)](#mod-music-optional)
+6. [Running in the Hatari emulator](#running-in-the-hatari-emulator)
+7. [Building from source](#building-from-source)
+8. [How the port works](#how-the-port-works)
+9. [Measured performance](#measured-performance)
+10. [Known limitations and untested areas](#known-limitations-and-untested-areas)
+11. [Further documentation](#further-documentation)
+12. [Credits and licence](#credits-and-licence)
+
+---
+
+## Repository layout
 
 ```
 .
-├── dist/                    ← binaires prêts à l'emploi (v0.27)
+├── dist/                    ← ready-to-run binaries (v0.27)
 │   ├── CB030.TOS            Falcon 68030
-│   ├── CB060.TOS            Falcon + CT60 / 68060 (à essayer en premier)
-│   ├── outrun.ini           options pré-réglées (musique .mod jouée par le DSP)
+│   ├── CB060.TOS            Falcon + CT60 / 68060 (try this one first)
+│   ├── outrun.ini           preset options (.mod music played by the DSP)
 │   ├── VERSION.txt
-│   ├── roms/                ← à remplir avec TES ROMs (voir roms.txt / LISEZMOI.txt)
-│   └── Music/               ← y déposer TES fichiers TRACK1..4.MOD (voir README.txt)
+│   ├── roms/                ← put YOUR ROMs here (see roms.txt / README.txt)
+│   └── Music/               ← put YOUR TRACK1..4.MOD files here (see README.txt)
 │
-├── src/main/                ← sources C++ du moteur Cannonball
-│   ├── engine/              logique du jeu OutRun (code d'origine + points d'accroche Atari)
-│   ├── hwvideo/ hwaudio/    émulation des puces vidéo et son (YM2151, SegaPCM)
-│   ├── frontend/            configuration (branche PLATFORM_ATARI sans Boost/XML)
-│   ├── atari/               ★ couche plateforme Atari (vidéo, son DMA, DSP, clavier, joysticks, assembleur 68k)
-│   ├── main_atari.cpp       ★ point d'entrée Atari (remplace main.cpp / SDL2)
-│   └── sdl2/ directx/       backends d'origine (non utilisés sur Atari, sauf le stub ffeedback)
+├── src/main/                ← Cannonball engine C++ sources
+│   ├── engine/              OutRun game logic (original code + Atari hooks)
+│   ├── hwvideo/ hwaudio/    video and sound chip emulation (YM2151, SegaPCM)
+│   ├── frontend/            configuration (PLATFORM_ATARI branch without Boost/XML)
+│   ├── atari/               ★ Atari platform layer (video, DMA sound, DSP, keyboard, joysticks, 68k assembler)
+│   ├── main_atari.cpp       ★ Atari entry point (replaces main.cpp / SDL2)
+│   └── sdl2/ directx/       original backends (not used on Atari, except the ffeedback stub)
 │
-├── res/                     tilemap.bin, tilepatch.bin, config.xml… (nécessaires à l'exécution)
-├── cmake/                   build CMake d'origine (Windows / Linux / Pi4, non Atari)
-├── docs/license.txt         licence Cannonball
+├── res/                     tilemap.bin, tilepatch.bin, config.xml… (needed at run time)
+├── cmake/                   original CMake build (Windows / Linux / Pi4, not Atari)
+├── docs/license.txt         Cannonball licence
 │
-├── build_atari.sh           ★ script de build principal (cross-compilateur m68k-atari-mint)
-├── build_release.sh         construit CB030.TOS + CB060.TOS
-├── build_*test.sh           builds de diagnostic (clavier, perf, musique, sortie…)
-├── Makefile.atari           liste des sources compilées pour Atari
-├── outrun.ini.example       toutes les options, commentées
+├── build_atari.sh           ★ main build script (m68k-atari-mint cross compiler)
+├── build_release.sh         builds CB030.TOS + CB060.TOS
+├── build_*test.sh           diagnostic builds (keyboard, perf, music, quit…)
+├── Makefile.atari           list of sources compiled for the Atari
+├── outrun.ini.example       every option, with comments
 │
-├── README_ATARI.md          doc technique du portage (en anglais)
-├── ATARI_PORT_FILES.md      rôle de chaque fichier du portage (en français)
-├── DSP_NOTES.md             journal du travail sur le DSP56001
-└── README_CANNONBALL.md     README d'origine du projet Cannonball
+├── README_ATARI.md          technical documentation of the port
+├── ATARI_PORT_FILES.md      what each file of the port does
+├── DSP_NOTES.md             log of the DSP56001 work
+└── README_CANNONBALL.md     original README of the Cannonball project
 ```
 
 ---
 
-## Démarrage rapide
+## Quick start
 
-### 1. Copier les fichiers
+### 1. Copy the files
 
-Copie sur le disque de l'Atari, dans un même dossier :
+Copy these to the Atari's disk, all in one folder:
 
-- le contenu de `dist/` : `CB030.TOS` et/ou `CB060.TOS`, `outrun.ini`, `roms/`, `Music/` ;
-- le dossier `res/` qui se trouve à la racine de ce dépôt.
+- the contents of `dist/`: `CB030.TOS` and/or `CB060.TOS`, `outrun.ini`, `roms/`, `Music/`;
+- the `res/` folder from the root of this repository.
 
 ```
 C:\OUTRUN\
@@ -91,10 +90,10 @@ C:\OUTRUN\
     Music\
 ```
 
-### 2. Installer les ROMs
+### 2. Install the ROMs
 
-Place dans `roms\` les **31 fichiers ROM d'OutRun révision B**. La liste figure dans
-[`dist/roms/roms.txt`](dist/roms/roms.txt) et dans `src/main/roms.cpp` :
+Put the **31 ROM files of OutRun revision B** in `roms\`. They are listed in
+[`dist/roms/roms.txt`](dist/roms/roms.txt) and in `src/main/roms.cpp`:
 
 ```
 epr-10187.88    epr-10327a.76   epr-10328a.75   epr-10329a.58   epr-10330a.57
@@ -106,160 +105,160 @@ opr-10191.68    opr-10192.67    opr-10193.66    opr-10230.104   opr-10231.103
 opr-10232.102   opr-10266.101   opr-10267.100   opr-10268.99
 ```
 
-**Noms longs et FreeMiNT.** Les noms d'origine (`epr-10380b.133`…) dépassent la limite
-8.3 du GEMDOS. Tu as deux possibilités :
+**Long file names and FreeMiNT.** The original names (`epr-10380b.133`…) are longer than
+the GEMDOS 8.3 limit. You have two choices:
 
-- **`freemint = 1`** (par défaut) : garde les noms d'origine. Sur une vraie machine, il faut
-  **FreeMiNT** (ou un autre système de fichiers qui gère les noms longs).
-- **`freemint = 0`** : fonctionne sous TOS seul, mais il faut renommer les ROMs en 8.3 :
-  `epr-` devient `E`, `mpr-` devient `M`, `opr-` devient `O`. Par exemple, `epr-10380b.133`
-  devient `E10380b.133` et `mpr-10371.9` devient `M10371.9`. La table complète est dans
+- **`freemint = 1`** (default): keep the original names. On real hardware this needs
+  **FreeMiNT** (or another file system that supports long names).
+- **`freemint = 0`**: works on plain TOS, but the ROMs must be renamed to 8.3 names:
+  `epr-` becomes `E`, `mpr-` becomes `M`, `opr-` becomes `O`. For example, `epr-10380b.133`
+  becomes `E10380b.133` and `mpr-10371.9` becomes `M10371.9`. The full table is in
   [`README_ATARI.md`](README_ATARI.md).
 
-### 3. Lancer
+### 3. Run
 
-Double-clique sur **`CB060.TOS`** (Falcon avec CT60) ou sur **`CB030.TOS`** (Falcon de série).
-Le chargement des ROMs prend quelques secondes, puis le jeu démarre directement en mode
-attract, sans menu. Appuie sur **Entrée** pour mettre une pièce et lancer la partie.
+Double-click **`CB060.TOS`** (Falcon with a CT60) or **`CB030.TOS`** (stock Falcon).
+Loading the ROMs takes a few seconds, then the game starts straight into attract mode,
+with no menu. Press **Return** to insert a coin and start a race.
 
 ---
 
-## Commandes de jeu
+## Controls
 
-### Clavier
+### Keyboard
 
-| Touche | Action |
+| Key | Action |
 |---|---|
-| ← / → | Diriger |
-| Espace | Accélérer |
-| Ctrl gauche | Freiner |
-| Alt gauche / Shift gauche | Changer de vitesse (LOW / HIGH) |
-| Entrée | Pièce / Start |
-| V | Changer de vue |
-| P | Pause (affiche « PAUSE », Falcon uniquement) |
-| F9 | Capture d'écran (`SHOTnnnn.PNG` dans le dossier du jeu) |
-| Échap / F10 | Quitter (confirmer avec ↑, annuler avec ↓) |
+| ← / → | Steer |
+| Space | Accelerate |
+| Left Ctrl | Brake |
+| Left Alt / Left Shift | Change gear (LOW / HIGH) |
+| Return | Coin / Start |
+| V | Change view |
+| P | Pause (shows "PAUSE", Falcon only) |
+| F9 | Screenshot (`SHOTnnnn.PNG` in the game's folder) |
+| Esc / F10 | Quit (confirm with ↑, cancel with ↓) |
 
-### Joystick standard (prise DB9, port joystick, pas le port souris)
+### Standard joystick (DB9 socket, the joystick port, not the mouse port)
 
-Gauche / droite pour diriger, avant pour accélérer, arrière pour freiner, bouton pour changer
-de vitesse. Le clavier et le joystick marchent en même temps.
+Left / right to steer, forward to accelerate, back to brake, fire to change gear. The
+keyboard and the joystick work at the same time.
 
-### Ports joystick étendus (les 2 prises 15 broches du STE / Falcon), nouveau en v0.27
+### Enhanced joystick ports (the two 15-pin sockets of the STE / Falcon), new in v0.27
 
-Ces ports acceptent un pad Jaguar, ou un joystick classique branché sur un adaptateur :
+These ports take a Jaguar pad, or a plain joystick on an adapter:
 
 | Pad | Action |
 |---|---|
-| Gauche / droite | Diriger |
-| Haut ou **B** | Accélérer |
-| Bas ou **C** | Freiner |
-| **A** (le bouton d'un joystick simple) | Changer de vitesse |
-| **Option** | Pièce / Start |
+| Left / right | Steer |
+| Up or **B** | Accelerate |
+| Down or **C** | Brake |
+| **A** (the fire button of a plain joystick) | Change gear |
+| **Option** | Coin / Start |
 | **Pause** | Pause |
 
-> Sous Hatari, la détection des ports a été vérifiée (ils lisent bien « rien d'appuyé » quand
-> rien n'est branché). **Ce n'est pas encore testé avec un vrai pad ou joystick branché.**
+> In Hatari, port detection has been checked (the ports read "nothing pressed" when nothing
+> is plugged in). **This has not yet been tested with a real pad or joystick plugged in.**
 
 ---
 
-## Fichier d'options `outrun.ini`
+## Options file `outrun.ini`
 
-Le jeu le lit au démarrage, à côté de l'exécutable. Toutes les lignes sont facultatives.
-Chaque option est commentée dans [`outrun.ini.example`](outrun.ini.example).
+The game reads it at start-up, next to the executable. Every line is optional.
+Each option is described in [`outrun.ini.example`](outrun.ini.example).
 
-| Option | Valeurs | Défaut | Effet |
+| Option | Values | Default | Effect |
 |---|---|---|---|
-| `shadows` | 0 / 1 | 1 | Ombres sous les voitures et le décor (0 donne environ +4 % d'images/s) |
-| `shadow_min_z` | 0..0x1ff | 0 | Avec les ombres, n'en dessine que pour les objets proches |
-| `scenery` | 0 / 1 | 1 | 0 = ni arbres, ni panneaux, ni bâtiments. **De loin le meilleur gain**, conseillé sur 68030 |
-| `vscale` | 50..100 | 100 | % des 224 lignes calculées (67 donne +17 %, 50 donne +26 %) |
-| `road_hres` | 0 / 1 | 0 | Route calculée en demi-résolution horizontale (+5 %) |
-| `cadence` | 0..4 | 0 | Pas de jeu entre deux images : 0 = auto, 1 = 30 i/s, 2 = 15, 3 = 10, 4 = 7,5 |
-| `sound` | 0 / 1 / 2 | 2 | 0 = muet, 1 = son toujours calculé, 2 = son calculé seulement s'il reste du temps CPU |
-| `music` | 0 / 1 | 1 | Coupe la musique sans toucher aux bruitages |
-| `fm_half` | 0 / 1 | 0 | Puce FM émulée à mi-fréquence : moins coûteux, mais son plus terne |
-| `mod` | 0 / 1 | 0 | Remplace la musique FM par des fichiers `.mod` (voir plus bas) |
-| `mod_dsp` | 0 / 1 | 0 | Fait jouer les `.mod` par le **DSP56001** du Falcon au lieu du CPU |
-| `freemint` | 0 / 1 | 1 | Noms de ROM longs (1) ou renommés en 8.3 (0) |
+| `shadows` | 0 / 1 | 1 | Shadows under the cars and the scenery (0 gives about +4 % frames/s) |
+| `shadow_min_z` | 0..0x1ff | 0 | With shadows on, only draw them for nearby objects |
+| `scenery` | 0 / 1 | 1 | 0 = no trees, signs or buildings. **By far the biggest speed-up**, recommended on a 68030 |
+| `vscale` | 50..100 | 100 | % of the 224 lines that are computed (67 gives +17 %, 50 gives +26 %) |
+| `road_hres` | 0 / 1 | 0 | Road computed at half horizontal resolution (+5 %) |
+| `cadence` | 0..4 | 0 | Game steps between two frames: 0 = auto, 1 = 30 fps, 2 = 15, 3 = 10, 4 = 7.5 |
+| `sound` | 0 / 1 / 2 | 2 | 0 = silent, 1 = sound always synthesised, 2 = sound only when CPU time is left |
+| `music` | 0 / 1 | 1 | Turns the music off without affecting sound effects |
+| `fm_half` | 0 / 1 | 0 | FM chip emulated at half rate: cheaper, but duller sound |
+| `mod` | 0 / 1 | 0 | Replaces the FM music with `.mod` files (see below) |
+| `mod_dsp` | 0 / 1 | 0 | Plays the `.mod` files on the Falcon's **DSP56001** instead of the CPU |
+| `freemint` | 0 / 1 | 1 | Long ROM names (1) or names renamed to 8.3 (0) |
 
-Le `dist/outrun.ini` fourni règle `sound=1`, `mod=1` et `mod_dsp=1`.
-**Conseils pour le Falcon 030 de série :** `scenery=0`, `vscale=67`, `mod=1`.
+The supplied `dist/outrun.ini` sets `sound=1`, `mod=1` and `mod_dsp=1`.
+**Tips for a stock Falcon 030:** `scenery=0`, `vscale=67`, `mod=1`.
 
 ---
 
-## Musique `.mod` (option)
+## `.mod` music (optional)
 
-Avec `mod=1`, les musiques FM d'origine sont remplacées par des modules **ProTracker
-4 voies** que tu fournis toi-même, dans `Music\` :
+With `mod=1`, the original FM music is replaced by **4-channel ProTracker** modules that
+you supply yourself, in `Music\`:
 
-| Fichier | Morceau |
+| File | Track |
 |---|---|
 | `TRACK1.MOD` | Magical Sound Shower |
 | `TRACK2.MOD` | Passing Breeze |
 | `TRACK3.MOD` | Splash Wave |
-| `TRACK4.MOD` | Last Wave (écran des meilleurs scores) |
+| `TRACK4.MOD` | Last Wave (high-score screen) |
 
-Si un fichier manque, le morceau correspondant repasse en musique FM d'origine. Les `.mod`
-coûtent beaucoup moins de CPU que l'émulation du YM2151.
+If a file is missing, that track falls back to the original FM music. The `.mod` files cost
+much less CPU time than emulating the YM2151.
 
-- **`mod_dsp=0`** : le lecteur 4 voies écrit pour ce portage (`atari/modplayer.cpp`) mixe la
-  musique sur le CPU.
-- **`mod_dsp=1`** : la musique est jouée par le **DSP56001** avec le replay SoundTracker de
-  **Simplet / ABSTRACT** (archive `dsptrack` de dhs.nu, utilisé sans modification), en
-  49 170 Hz stéréo, au bon tempo quelle que soit la cadence d'affichage. Le mixage FM + PCM du
-  jeu passe alors par le DSP sur deux voies supplémentaires. Si le DSP ne répond pas, le jeu
-  revient tout seul en mode CPU.
+- **`mod_dsp=0`**: the 4-channel player written for this port (`atari/modplayer.cpp`) mixes
+  the music on the CPU.
+- **`mod_dsp=1`**: the music is played by the **DSP56001**, using the SoundTracker replay by
+  **Simplet / ABSTRACT** (the `dsptrack` archive on dhs.nu, used unmodified), at 49,170 Hz
+  stereo, at the right tempo whatever the frame rate. The game's own FM + PCM mix then goes
+  through the DSP on two extra voices. If the DSP does not answer, the game falls back to CPU
+  mode by itself.
 
-> Les fichiers `.mod` ne sont pas inclus dans ce dépôt (reprises de morceaux protégés).
+> The `.mod` files are not included in this repository (covers of copyrighted tracks).
 
 ---
 
-## Lancer sous l'émulateur Hatari
+## Running in the Hatari emulator
 
-Mets `CB030.TOS` (ou `CB060.TOS`), `roms/`, `res/` et `outrun.ini` dans un même dossier,
-puis monte ce dossier comme disque GEMDOS :
+Put `CB030.TOS` (or `CB060.TOS`), `roms/`, `res/` and `outrun.ini` in one folder, then
+mount that folder as a GEMDOS drive:
 
 ```bash
 # Falcon 030
 hatari --machine falcon --memsize 14 --dsp none --tos tos.img \
-       --harddrive <dossier>
+       --harddrive <folder>
 
-# Falcon + 68060 avec Fast RAM (configuration la plus rapide)
+# Falcon + 68060 with Fast RAM (fastest configuration)
 hatari --machine falcon --memsize 14 --ttram 32 --cpulevel 6 --cpuclock 32 \
-       --addr24 false --tos tos.img --harddrive <dossier>
+       --addr24 false --tos tos.img --harddrive <folder>
 
-# Pour la musique .mod jouée par le DSP : remplacer --dsp none par --dsp emu
+# For .mod music played by the DSP: replace --dsp none with --dsp emu
 
 # Mega STE
-hatari --machine megaste --memsize 10 --tos tos.img --harddrive <dossier>
+hatari --machine megaste --memsize 10 --tos tos.img --harddrive <folder>
 ```
 
-Ces commandes ont été testées avec `tos.img` = EmuTOS 1.4, fourni avec Hatari.
+These commands were tested with `tos.img` = EmuTOS 1.4, which comes with Hatari.
 
-**Attention au piège de `--auto`.** `--auto FICHIER` ne lance pas le programme : Hatari
-*tape* le nom du fichier sur le bureau, après le boot. Pour démarrer le jeu automatiquement,
-mets-le dans le dossier `AUTO\` en le renommant en `.PRG`. Si tu utilises quand même
-`--auto`, donne-lui un nom de fichier qui n'existe pas (`--auto NOFILE.TOS`). Sinon, le jeu
-se relance tout seul dès que tu le quittes. Les détails sont dans `README_ATARI.md`.
+**Watch out for the `--auto` trap.** `--auto FILE` does not launch the program: Hatari
+*types* the file name at the desktop, after boot. To start the game automatically, put it
+in the `AUTO\` folder, renamed to `.PRG`. If you still use `--auto`, give it a file name that
+does not exist (`--auto NOFILE.TOS`). Otherwise the game restarts by itself as soon as you
+quit it. Details are in `README_ATARI.md`.
 
-Pour les joysticks, associe une manette du PC au **port joystick 1** de l'ST, et aux ports
-**2 / 3** (« STE joypad A/B ») pour les ports étendus.
+For joysticks, map a host controller to ST **joystick port 1**, and to ports **2 / 3**
+("STE joypad A/B") for the enhanced ports.
 
 ---
 
-## Compiler depuis les sources
+## Building from source
 
-### Prérequis
+### Requirements
 
-- Le cross-compilateur **`m68k-atari-mint` GCC 4.6.4** de Vincent Rivière.
-  Développement fait sous Cygwin, avec le compilateur installé dans `/opt/cross-mint`.
-- `bash`, `grep` et `sed`. `make` n'est pas nécessaire : `build_atari.sh` s'en passe.
+- Vincent Rivière's **`m68k-atari-mint` GCC 4.6.4** cross compiler.
+  Development was done under Cygwin, with the compiler installed in `/opt/cross-mint`.
+- `bash`, `grep` and `sed`. `make` is not needed: `build_atari.sh` does without it.
 
-### Commandes
+### Commands
 
 ```bash
-# Mega STE (68000, 16 couleurs) -> OUTRUN.TOS
+# Mega STE (68000, 16 colours) -> OUTRUN.TOS
 bash ./build_atari.sh
 
 # Falcon 030 -> CB030.TOS
@@ -268,140 +267,138 @@ CPU=68030 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB030.TOS bas
 # Falcon + 68060 -> CB060.TOS
 CPU=68060 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB060.TOS bash ./build_atari.sh
 
-# Les deux binaires de release d'un coup
-# (adapter d'abord le chemin cd /cygdrive/c/claude/cannonball dans le script)
+# Both release binaries at once
+# (first adjust the "cd /cygdrive/c/claude/cannonball" path in the script)
 bash ./build_release.sh
 ```
 
-Le script affiche `BUILD_OK` quand l'édition de liens réussit.
+The script prints `BUILD_OK` when linking succeeds.
 
-Points importants :
+Important points:
 
-- **`LINKCPU=68000` est obligatoire**, même pour un build 030 ou 060. Les bibliothèques
-  68020-60 du toolchain supposent un FPU, que le Falcon n'a pas. Avec la mauvaise
-  bibliothèque, le binaire plante juste après `Pexec`, avant `main()`.
-- **`OUT` doit rester au format 8.3** : 8 caractères au maximum, plus 3 pour l'extension.
-- On peut aussi utiliser `make -f Makefile.atari`, qui compile les mêmes sources pour le
+- **`LINKCPU=68000` is required**, even for a 030 or 060 build. The toolchain's 68020-60
+  libraries assume an FPU, which the Falcon does not have. With the wrong library, the binary
+  crashes right after `Pexec`, before `main()`.
+- **`OUT` must stay 8.3**: at most 8 characters, plus 3 for the extension.
+- You can also use `make -f Makefile.atari`, which builds the same sources for the
   Mega STE.
 
-### Options de compilation utiles (à passer dans `EXTRA`)
+### Useful build flags (pass them in `EXTRA`)
 
-| Option | Effet |
+| Flag | Effect |
 |---|---|
-| `-DLOWRES` | Rendu en 160×112 doublé à l'écran (Falcon) |
-| `-DNO_SOUND` | Aucun son (comparaisons de vitesse) |
-| `-DSOUND_RATE=25033` | Fréquence de mixage DMA différente des 12 517 Hz par défaut |
-| `-DMOVE16` | 68060 : copie de chaque ligne vers l'écran en rafales MOVE16 |
-| `-DBENCH_N=400` | Mesure de la cadence sur 400 images, avec une ligne de résultat |
-| `-DPERF_PRINT` | Temps par étape, écrits dans `PERFLOG.TXT` |
-| `-DAUTOPLAY` | Pièce, start et accélérateur automatiques (mesures) |
-| `-DKEYTRACE` / `-DPADTRACE_FILE` | Trace du clavier / des ports joystick étendus |
+| `-DLOWRES` | Render at 160×112, doubled on screen (Falcon) |
+| `-DNO_SOUND` | No sound (speed comparisons) |
+| `-DSOUND_RATE=25033` | DMA mixing rate other than the default 12,517 Hz |
+| `-DMOVE16` | 68060: each row is copied to the screen in MOVE16 bursts |
+| `-DBENCH_N=400` | Times 400 frames and prints one result line |
+| `-DPERF_PRINT` | Per-stage timings, written to `PERFLOG.TXT` |
+| `-DAUTOPLAY` | Automatic coin, start and accelerator (measurements) |
+| `-DKEYTRACE` / `-DPADTRACE_FILE` | Trace of the keyboard / of the enhanced joystick ports |
 
-La liste complète (une trentaine d'aides au diagnostic : `ROWCHECK`, `ROADCHECK`,
-`PCMCHECK`, `MUSIC_RENDER`…) est dans [`README_ATARI.md`](README_ATARI.md#building).
-
----
-
-## Fonctionnement du portage
-
-Le moteur, l'émulation des puces (`hwvideo/`, `hwaudio/`) et la logique de jeu sont le code
-C++ d'origine de Cannonball. Le portage apporte trois choses :
-
-- une **couche plateforme Atari** (`src/main/atari/`, `main_atari.cpp`) ;
-- les **adaptations au cross-compilateur MiNT** ;
-- des **routines assembleur 68k** pour les boucles les plus coûteuses.
-
-En résumé :
-
-- **Vidéo.** Le moteur compose une image 320×224 en indices de palette.
-  - Sur **Falcon**, chaque pixel passe par une table vers du RGB565 16 bits (`truecolor_asm.S`).
-    Les lignes qui n'ont pas changé ne sont pas reconverties (cache de lignes). L'écran est en
-    triple buffer, et le mode vidéo est choisi selon la taille disponible : VGA 320×240 ou
-    RVB/TV 384×240 en overscan, sinon 320×400 entrelacé.
-  - Sur **Mega STE**, une palette de 16 couleurs est choisie à chaque image par histogramme,
-    puis l'image est convertie en bitplanes.
-- **Cadence.** La logique de jeu tourne toujours à 30 pas par seconde en temps réel. Quand
-  l'affichage est plus lent, plusieurs pas sont calculés par image, de sorte que le jeu garde
-  sa vitesse et que seule la fluidité baisse.
-- **Son.** Le YM2151 (FM) et le SegaPCM sont émulés, puis mixés et envoyés au DMA son du
-  STE / Falcon en 12 517 Hz, avec quatre buffers. En option, les `.mod` sont joués par le CPU
-  ou par le DSP56001 (voir plus haut).
-- **Entrées.** Une interruption clavier en assembleur (`kbd_asm.S`) remplace le vecteur ACIA
-  pendant la partie et le restaure en sortie. Elle lit le joystick IKBD et les ports joystick
-  étendus.
-- **Assembleur 68k** (`src/main/atari/*.S`) : lignes de sprites (versions 68000 et 030/060),
-  segments de route, tuiles 8×8, canaux SegaPCM, conversion chunky vers planar et vers 16 bits,
-  replay DSP.
-- **Mémoire.** L'opérateur `new` remet la mémoire à zéro, car TOS ne le fait pas alors que le
-  moteur en a besoin. L'écran et les buffers son sont en ST-RAM, tout le reste peut aller en
-  Fast RAM.
-
-Le rôle de chaque fichier est détaillé dans [`ATARI_PORT_FILES.md`](ATARI_PORT_FILES.md).
+The full list (about thirty diagnostic aids: `ROWCHECK`, `ROADCHECK`, `PCMCHECK`,
+`MUSIC_RENDER`…) is in [`README_ATARI.md`](README_ATARI.md#building).
 
 ---
 
-## Performances mesurées
+## How the port works
 
-Mesures faites sous Hatari, en temps émulé, pendant que le jeu roule en démo et en pleine
-résolution :
+The engine, the chip emulation (`hwvideo/`, `hwaudio/`) and the game logic are Cannonball's
+original C++ code. The port adds three things:
 
-| Machine | Temps par image | Vitesse du jeu |
+- an **Atari platform layer** (`src/main/atari/`, `main_atari.cpp`);
+- the **changes needed for the MiNT cross compiler**;
+- **68k assembler routines** for the most expensive loops.
+
+In short:
+
+- **Video.** The engine composes a 320×224 picture of palette indices.
+  - On the **Falcon**, each pixel goes through a lookup table to 16-bit RGB565
+    (`truecolor_asm.S`). Rows that have not changed are not converted again (row cache). The
+    screen is triple-buffered, and the video mode is chosen by the size available: VGA
+    320×240 or RGB/TV 384×240 overscan, otherwise interlaced 320×400.
+  - On the **Mega STE**, a 16-colour palette is chosen for each frame from a histogram, then
+    the picture is converted to bitplanes.
+- **Timing.** Game logic always runs at 30 steps per second of real time. When drawing is
+  slower, several steps are computed per frame, so the game keeps its speed and only
+  smoothness drops.
+- **Sound.** The YM2151 (FM) and the SegaPCM are emulated, then mixed and sent to the
+  STE / Falcon DMA sound at 12,517 Hz, with four buffers. Optionally, `.mod` files are played
+  by the CPU or by the DSP56001 (see above).
+- **Input.** An assembler keyboard interrupt handler (`kbd_asm.S`) replaces the ACIA vector
+  while the game runs and restores it on exit. It reads the IKBD joystick and the enhanced
+  joystick ports.
+- **68k assembler** (`src/main/atari/*.S`): sprite scanlines (68000 and 030/060 versions),
+  road spans, 8×8 tiles, SegaPCM channels, chunky-to-planar and 16-bit conversion, DSP
+  replay.
+- **Memory.** `operator new` zeroes memory, because TOS does not and the engine relies on
+  it. The screen and sound buffers live in ST-RAM; everything else can go in Fast RAM.
+
+What each file does is detailed in [`ATARI_PORT_FILES.md`](ATARI_PORT_FILES.md).
+
+---
+
+## Measured performance
+
+Measured in Hatari, in emulated time, with the game driving itself in demo mode at full
+resolution:
+
+| Machine | Time per frame | Game speed |
 |---|---|---|
-| Falcon 030 @ 16 MHz | ~1,3 s | ~35-55 % du temps réel |
-| 68060 @ 32 MHz + Fast RAM | ~0,065 s (15 images/s) | **100 %** du temps réel |
-| Mega STE | plusieurs secondes | injouable |
+| Falcon 030 @ 16 MHz | ~1.3 s | ~35-55 % of real time |
+| 68060 @ 32 MHz + Fast RAM | ~0.065 s (15 frames/s) | **100 %** of real time |
+| Mega STE | several seconds | not playable |
 
-Effet de `vscale` sur le 68060 émulé : 100 donne 18,3 i/s, 67 donne 21,5 i/s et 50 donne
-23,1 i/s.
-
----
-
-## Limites connues et points non testés
-
-- **Rien n'a encore été vérifié sur une vraie machine.** Tous les tests ont été faits sous
-  Hatari, et l'émulation du 68060 y est marquée « expérimentale ».
-- Les ports joystick étendus (v0.27) n'ont pas été testés avec un pad réellement branché.
-- Les menus frontend de Cannonball (réglages, Time Trial…) ne sont pas inclus : le jeu démarre
-  directement.
-- La pause n'est disponible que sur Falcon.
-- Il n'y a pas de volant ni de pédales analogiques.
-- Sur vraie machine sans FreeMiNT, il faut `freemint=0` et des ROMs renommées en 8.3.
-- Clavier : le gestionnaire désactive les paquets souris et joystick de l'IKBD au démarrage.
-  Si une touche semble rester « enfoncée », c'est le premier endroit à regarder
-  (`atari/input.cpp`).
-
-Retours bienvenus, surtout sur vrai matériel (Falcon 030, CT60/CT63, pads Jaguar).
+Effect of `vscale` on the emulated 68060: 100 gives 18.3 fps, 67 gives 21.5 fps and 50
+gives 23.1 fps.
 
 ---
 
-## Documentation détaillée
+## Known limitations and untested areas
 
-| Fichier | Contenu |
+- **Nothing has been checked on real hardware yet.** All testing was done in Hatari, where
+  68060 emulation is marked "experimental".
+- The enhanced joystick ports (v0.27) have not been tested with a pad actually plugged in.
+- Cannonball's frontend menus (settings, Time Trial…) are not included: the game starts
+  straight away.
+- Pause is only available on the Falcon.
+- There is no analogue steering wheel or pedal support.
+- On real hardware without FreeMiNT, you need `freemint=0` and ROMs renamed to 8.3.
+- Keyboard: the handler disables IKBD mouse and joystick packets at start-up. If a key ever
+  seems stuck "down", that is the first place to look (`atari/input.cpp`).
+
+Feedback is welcome, especially from real hardware (Falcon 030, CT60/CT63, Jaguar pads).
+
+---
+
+## Further documentation
+
+| File | Contents |
 |---|---|
-| [`README_ATARI.md`](README_ATARI.md) | Doc technique complète du portage (EN) : build, options de compilation, Hatari, pièges, mesures |
-| [`ATARI_PORT_FILES.md`](ATARI_PORT_FILES.md) | Rôle de chaque fichier ajouté ou modifié, points d'accroche dans le moteur, bugs corrigés (FR) |
-| [`DSP_NOTES.md`](DSP_NOTES.md) | Journal du travail sur le DSP56001 |
-| [`VERSION.txt`](VERSION.txt) | Changements de la v0.27 |
-| [`outrun.ini.example`](outrun.ini.example) | Toutes les options d'exécution |
-| [`README_CANNONBALL.md`](README_CANNONBALL.md) | README d'origine de Cannonball (build Windows / Linux / Pi) |
+| [`README_ATARI.md`](README_ATARI.md) | Full technical documentation of the port: build, build flags, Hatari, pitfalls, measurements |
+| [`ATARI_PORT_FILES.md`](ATARI_PORT_FILES.md) | What each added or modified file does, hooks in the engine, bugs fixed |
+| [`DSP_NOTES.md`](DSP_NOTES.md) | Log of the DSP56001 work |
+| [`VERSION.txt`](VERSION.txt) | Changes in v0.27 |
+| [`outrun.ini.example`](outrun.ini.example) | Every run-time option |
+| [`README_CANNONBALL.md`](README_CANNONBALL.md) | Original Cannonball README (Windows / Linux / Pi build) |
 
 ---
 
-## Crédits et licence
+## Credits and licence
 
-- **Cannonball** © Chris White et l'équipe Cannonball : moteur, reverse engineering d'OutRun
-  ([github.com/djyt/cannonball](https://github.com/djyt/cannonball),
-  [blog Reassembler](http://reassembler.blogspot.com/)). Ce portage n'existerait pas sans
-  leur travail.
-- **Replay DSP SoundTracker** : Simplet / ABSTRACT (archive `dsptrack`, dhs.nu).
-- **Portage Atari** Falcon 030 / CT60 / Mega STE : Popov2026.
+- **Cannonball** © Chris White and the Cannonball team: engine and OutRun reverse
+  engineering ([github.com/djyt/cannonball](https://github.com/djyt/cannonball),
+  [Reassembler blog](http://reassembler.blogspot.com/)). This port would not exist without
+  their work.
+- **SoundTracker DSP replay**: Simplet / ABSTRACT (`dsptrack` archive, dhs.nu).
+- **Atari port** for Falcon 030 / CT60 / Mega STE: Popov2026.
 
-Ce dépôt est distribué sous la **licence Cannonball** ([`docs/license.txt`](docs/license.txt)) :
+This repository is distributed under the **Cannonball licence** ([`docs/license.txt`](docs/license.txt)):
 
-- redistribution **non commerciale** uniquement ;
-- toute version modifiée doit être accompagnée de **ses sources complètes**, ce que fait ce
-  dépôt ;
-- la notice de copyright doit être conservée.
+- **non-commercial** redistribution only;
+- any modified version must come with its **complete source code**, which this repository
+  provides;
+- the copyright notice must be kept.
 
-*OutRun est une marque de SEGA Corporation. Ce projet n'est pas affilié à SEGA. Aucune ROM ni
-musique protégée n'est incluse.*
+*OutRun is a trademark of SEGA Corporation. This project is not affiliated with SEGA. No
+ROMs or copyrighted music are included.*
