@@ -1,5 +1,7 @@
 # OutRun – Cannonball for Atari Falcon 030 and Falcon CT60 / CT63 (68060)
 
+**English** | [Français](README.fr.md)
+
 A port of Chris White's **[Cannonball](https://github.com/djyt/cannonball)** engine (a C++
 rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atari Falcon**:
 
@@ -17,6 +19,13 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atar
 
 > ⚠️ **The OutRun ROMs are not included** (they belong to SEGA). You need your own dump of
 > the game, **revision B**: see [Install the ROMs](#2-install-the-roms).
+
+### Download
+
+The ready-to-run package is on the **[Releases](../../releases)** page:
+`cannonball_falcon_v0.27.zip` contains `CB030.TOS`, `CB060.TOS`, `outrun.ini`, the `res/`
+folder and empty `roms/` and `Music/` folders with instructions. Unzip it, add your ROMs
+(and optionally your `.mod` files) and run. No ROMs or `.mod` music are included.
 
 ---
 
@@ -67,6 +76,7 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atar
 ├── Makefile.atari           list of sources compiled for the Atari
 ├── outrun.ini.example       every option, with comments
 │
+├── README.fr.md             French version of this README
 ├── README_ATARI.md          technical documentation of the port
 ├── ATARI_PORT_FILES.md      what each file of the port does
 ├── DSP_NOTES.md             log of the DSP56001 work
@@ -79,7 +89,9 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atar
 
 ### 1. Copy the files
 
-Copy these to the Atari's disk, all in one folder:
+The simplest way is to unzip the package from the [Releases](../../releases) page: it already
+has the layout below. Otherwise, from this repository, copy these to the Atari's disk, all in
+one folder:
 
 - the contents of `dist/`: `CB030.TOS` and/or `CB060.TOS`, `outrun.ini`, `roms/`, `Music/`;
 - the `res/` folder from the root of this repository.
@@ -139,7 +151,7 @@ with no menu. Press **Return** to insert a coin and start a race.
 | Left Alt / Left Shift | Change gear (LOW / HIGH) |
 | Return | Coin / Start |
 | V | Change view |
-| P | Pause (shows "PAUSE", Falcon only) |
+| P | Pause (shows "PAUSE") |
 | F9 | Screenshot (`SHOTnnnn.PNG` in the game's folder) |
 | Esc / F10 | Quit (confirm with ↑, cancel with ↓) |
 
@@ -234,7 +246,6 @@ hatari --machine falcon --memsize 14 --ttram 32 --cpulevel 6 --cpuclock 32 \
        --addr24 false --tos tos.img --harddrive <folder>
 
 # For .mod music played by the DSP: replace --dsp none with --dsp emu
-
 ```
 
 These commands were tested with `tos.img` = EmuTOS 1.4, which comes with Hatari.
