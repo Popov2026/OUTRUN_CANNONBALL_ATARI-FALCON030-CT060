@@ -1,4 +1,4 @@
-Cannonball Atari Falcon (CT60 / CT63) port - v0.27
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.27
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 

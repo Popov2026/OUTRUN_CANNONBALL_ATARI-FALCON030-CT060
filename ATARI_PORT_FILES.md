@@ -1,7 +1,7 @@
 # Atari port files — what each one does
 
 This document only covers the code written or modified for the Atari port
-(Falcon with a CT60 / CT63 68060 accelerator; a stock 16 MHz Falcon 030 is not usable). The rest of the Cannonball engine (`src/main/engine/`,
+(original Falcon 030, and Falcon with a CT60 / CT63 68060 accelerator). The rest of the Cannonball engine (`src/main/engine/`,
 `src/main/frontend/`, etc., apart from the hooks listed at the bottom of this page) is
 the project's original code and is not documented here. All credit for the engine,
 the OutRun reverse engineering and Cannonball itself goes to

@@ -1,8 +1,8 @@
-# Cannonball - Atari Falcon port (CT60 / CT63, 68060)
+# Cannonball - Atari Falcon port (Falcon 030 / CT60 / CT63)
 
-A port of the Cannonball OutRun engine to the Atari Falcon. **A 68060 accelerator
-(CT60 / CT63) is required**: on a stock 16 MHz Falcon 030 the game runs but is not
-usable (about one picture every 1.3 s). The engine, the chip
+A port of the Cannonball OutRun engine to the Atari Falcon: `CB030.TOS` for the
+original Falcon 030 (runs, but too slow at 16 MHz to be really playable: about one
+picture every 1.3 s) and `CB060.TOS` for a Falcon with a CT60 / CT63 (full speed). The engine, the chip
 emulation (`hwvideo/`, `hwaudio/`) and the game logic are the original C++;
 only the platform layer is new (`src/main/atari/`, `src/main/main_atari.cpp`),
 plus the changes needed to compile with the MiNT cross compiler and a set of
@@ -63,7 +63,7 @@ Cygwin package, installed in `C:\cygwin64\opt\cross-mint`). It has no `make`,
 so `build_atari.sh` compiles every source and links:
 
 ```bash
-# Falcon 030 (not usable on a stock 16 MHz Falcon)
+# Original Falcon 030
 CPU=68030 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB030.TOS bash ./build_atari.sh
 
 # Falcon with a 68060 accelerator
@@ -284,8 +284,8 @@ Full resolution, driving (the demo driving itself), seconds per picture:
 
 | Machine | Picture | Game speed |
 |---|---|---|
+| Original Falcon 030 @ 16 MHz | ~1.3 s | ~35-55 % of real time |
 | 68060 @ 32 MHz, fast RAM (CT60) | ~0.065 s (15/s) | 100 % of real time |
-| Stock Falcon 030 @ 16 MHz | ~1.3 s | not usable |
 
 Nothing here has been checked on real hardware, and sound output has not been
 listened to.

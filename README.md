@@ -1,15 +1,17 @@
-# OutRun – Cannonball for Atari Falcon CT60 / CT63 (68060)
+# OutRun – Cannonball for Atari Falcon 030 and Falcon CT60 / CT63 (68060)
 
 A port of Chris White's **[Cannonball](https://github.com/djyt/cannonball)** engine (a C++
 rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atari Falcon**:
 
 | Machine | Executable | CPU | Status |
 |---|---|---|---|
+| Original Falcon 030 | `CB030.TOS` | 68030 @ 16 MHz | Runs, but too slow to be really playable (~35-55 % of real speed) |
 | Falcon + CT60 / CT63 | `CB060.TOS` | 68060 (+ Fast RAM) | **Full speed** (100 % real time, measured in Hatari) |
-| Stock Falcon 030 | `CB030.TOS` | 68030 @ 16 MHz | **Not usable**: about one picture every 1.3 s |
 
-> **A 68060 accelerator (CT60 / CT63) is required to play.** A stock 16 MHz Falcon is far too
-> slow: `CB030.TOS` starts and runs, but the game is unplayable on it.
+> **On the original 16 MHz Falcon**, `CB030.TOS` runs the game but it is not really playable
+> (about one picture every 1.3 s with the default settings). The lighter settings listed in
+> [`outrun.ini`](#options-file-outrunini) help. For full speed, use `CB060.TOS` on a Falcon
+> with a CT60 / CT63.
 
 **Current version: v0.27**. The full changelog is in [`VERSION.txt`](VERSION.txt).
 
@@ -40,8 +42,8 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atar
 ```
 .
 ├── dist/                    ← ready-to-run binaries (v0.27)
-│   ├── CB030.TOS            stock Falcon 68030 (not usable at 16 MHz)
-│   ├── CB060.TOS            Falcon + CT60 / CT63 (68060): the one to use
+│   ├── CB030.TOS            original Falcon 030 (68030 @ 16 MHz, slow)
+│   ├── CB060.TOS            Falcon + CT60 / CT63 (68060, full speed)
 │   ├── outrun.ini           preset options (.mod music played by the DSP)
 │   ├── VERSION.txt
 │   ├── roms/                ← put YOUR ROMs here (see roms.txt / README.txt)
@@ -79,11 +81,12 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atar
 
 Copy these to the Atari's disk, all in one folder:
 
-- the contents of `dist/`: `CB060.TOS`, `outrun.ini`, `roms/`, `Music/`;
+- the contents of `dist/`: `CB030.TOS` and/or `CB060.TOS`, `outrun.ini`, `roms/`, `Music/`;
 - the `res/` folder from the root of this repository.
 
 ```
 C:\OUTRUN\
+    CB030.TOS
     CB060.TOS
     outrun.ini
     res\
@@ -118,7 +121,7 @@ the GEMDOS 8.3 limit. You have two choices:
 
 ### 3. Run
 
-Double-click **`CB060.TOS`** (Falcon with a CT60 / CT63).
+Double-click **`CB030.TOS`** (original Falcon 030) or **`CB060.TOS`** (Falcon with a CT60 / CT63).
 Loading the ROMs takes a few seconds, then the game starts straight into attract mode,
 with no menu. Press **Return** to insert a coin and start a race.
 
@@ -184,6 +187,8 @@ Each option is described in [`outrun.ini.example`](outrun.ini.example).
 | `freemint` | 0 / 1 | 1 | Long ROM names (1) or names renamed to 8.3 (0) |
 
 The supplied `dist/outrun.ini` sets `sound=1`, `mod=1` and `mod_dsp=1`.
+**Lighter settings for the original Falcon 030:** `scenery=0`, `vscale=67` (or 50), `mod=1`,
+`mod_dsp=1`.
 
 ---
 
@@ -216,10 +221,14 @@ much less CPU time than emulating the YM2151.
 
 ## Running in the Hatari emulator
 
-Put `CB060.TOS`, `roms/`, `res/` and `outrun.ini` in one folder, then
+Put `CB030.TOS` (or `CB060.TOS`), `roms/`, `res/` and `outrun.ini` in one folder, then
 mount that folder as a GEMDOS drive:
 
 ```bash
+# Original Falcon 030
+hatari --machine falcon --memsize 14 --dsp none --tos tos.img \
+       --harddrive <folder>
+
 # Falcon + 68060 with Fast RAM (CT60-like configuration)
 hatari --machine falcon --memsize 14 --ttram 32 --cpulevel 6 --cpuclock 32 \
        --addr24 false --tos tos.img --harddrive <folder>
@@ -252,7 +261,7 @@ For joysticks, map a host controller to **joystick port 1**, and to Hatari joyst
 ### Commands
 
 ```bash
-# Falcon 030 -> CB030.TOS
+# Original Falcon 030 -> CB030.TOS
 CPU=68030 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB030.TOS bash ./build_atari.sh
 
 # Falcon + 68060 -> CB060.TOS
@@ -331,8 +340,8 @@ resolution:
 
 | Machine | Time per frame | Game speed |
 |---|---|---|
+| Original Falcon 030 @ 16 MHz | ~1.3 s | ~35-55 % of real time |
 | 68060 @ 32 MHz + Fast RAM (CT60) | ~0.065 s (15 frames/s) | **100 %** of real time |
-| Stock Falcon 030 @ 16 MHz | ~1.3 s | not usable |
 
 Effect of `vscale` on the emulated 68060: 100 gives 18.3 fps, 67 gives 21.5 fps and 50
 gives 23.1 fps.
@@ -351,7 +360,7 @@ gives 23.1 fps.
 - Keyboard: the handler disables IKBD mouse and joystick packets at start-up. If a key ever
   seems stuck "down", that is the first place to look (`atari/input.cpp`).
 
-Feedback is welcome, especially from real hardware (CT60/CT63, Jaguar pads).
+Feedback is welcome, especially from real hardware (original Falcon 030, CT60/CT63, Jaguar pads).
 
 ---
 
@@ -375,7 +384,7 @@ Feedback is welcome, especially from real hardware (CT60/CT63, Jaguar pads).
   [Reassembler blog](http://reassembler.blogspot.com/)). This port would not exist without
   their work.
 - **SoundTracker DSP replay**: Simplet / ABSTRACT (`dsptrack` archive, dhs.nu).
-- **Atari Falcon port** (CT60 / CT63): Popov2026.
+- **Atari Falcon port** (Falcon 030 / CT60 / CT63): Popov2026.
 
 This repository is distributed under the **Cannonball licence** ([`docs/license.txt`](docs/license.txt)):
 
