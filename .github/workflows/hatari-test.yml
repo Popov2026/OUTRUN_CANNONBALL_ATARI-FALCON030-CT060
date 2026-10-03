@@ -19,7 +19,7 @@ jobs:
         run: |
           sudo add-apt-repository -y ppa:vriviere/ppa
           sudo apt-get update
-          sudo apt-get install -y cross-mint-essential hatari xvfb xdotool imagemagick unzip
+          sudo apt-get install -y cross-mint-essential hatari xvfb xdotool imagemagick unzip x11-utils
 
       - name: Build PADTEST
         run: |
@@ -28,10 +28,10 @@ jobs:
 
       - name: Get EmuTOS
         run: |
-          curl -fL -o emutos.zip https://github.com/emutos/emutos/releases/download/v1.3/emutos-1024k-1.3.zip \
-            || curl -fL -o emutos.zip "https://sourceforge.net/projects/emutos/files/emutos/1.3/emutos-1024k-1.3.zip/download"
+          curl -fL -o emutos.zip https://github.com/emutos/emutos/releases/download/v1.3/emutos-512k-1.3.zip \
+            || curl -fL -o emutos.zip "https://sourceforge.net/projects/emutos/files/emutos/1.3/emutos-512k-1.3.zip/download"
           unzip -o emutos.zip
-          cp $(find . -name 'etos1024k.img' | head -1) tos.img
+          cp $(find . -name 'etos512k.img' | head -1) tos.img
           ls -l tos.img
 
       - name: Run tests
@@ -48,8 +48,10 @@ jobs:
                    --harddrive hd --fast-boot true --sound off --statusbar false --drive-led false \
                    "$@" > results/$name.log 2>&1 &
             HP=$!
-            sleep 30
-            W=$(xdotool search --onlyvisible --class hatari | head -1)
+            sleep 40
+            xwininfo -root -tree >> results/$name.log 2>&1 || true
+            W=$(xdotool search --onlyvisible --name hatari | head -1)
+            echo "window: $W" >> results/$name.log
             [ -n "$W" ] && xdotool windowactivate --sync $W || true
             import -window root results/${name}_idle.png
             for k in Right Left Up Down Control_R; do
@@ -61,7 +63,6 @@ jobs:
           }
           run_test db9_port1 --joy0 none --joy1 keys --joy2 none --joy3 none
           run_test ext_padA  --joy0 none --joy1 none --joy2 keys --joy3 none
-          for f in results/*.png; do convert "$f" -crop 680x460+0+0 "$f" || true; done
           ls -l results
 
       - name: Publish screenshots to the ci-results branch
