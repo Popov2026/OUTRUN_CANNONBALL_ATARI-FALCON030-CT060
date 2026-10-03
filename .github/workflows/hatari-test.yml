@@ -31,7 +31,10 @@ jobs:
           curl -fL -o emutos.zip https://github.com/emutos/emutos/releases/download/v1.3/emutos-512k-1.3.zip \
             || curl -fL -o emutos.zip "https://sourceforge.net/projects/emutos/files/emutos/1.3/emutos-512k-1.3.zip/download"
           unzip -o emutos.zip
-          cp $(find . -name 'etos512k.img' | head -1) tos.img
+          find . -name 'etos512*.img'
+          IMG=$(find . -name 'etos512us.img' | head -1)
+          [ -n "$IMG" ] || IMG=$(find . -name 'etos512*.img' | head -1)
+          cp "$IMG" tos.img
           ls -l tos.img
 
       - name: Run tests
