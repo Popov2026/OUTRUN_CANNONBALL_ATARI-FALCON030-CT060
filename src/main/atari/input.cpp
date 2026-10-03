@@ -26,6 +26,7 @@ static Input* g_input_instance = &input;
 extern "C" void atari_ikbd_isr(void);
 extern "C" volatile uint8_t atari_scan[128];
 extern "C" volatile uint8_t atari_joy1;   // last joystick-1 event report byte (see kbd_asm.S)
+extern "C" volatile uint8_t atari_joy0;   // same for joystick 0, the port shared with the mouse
 
 static void (*old_acia_vector)(void) = 0;
 static bool acia_installed = false;
@@ -96,8 +97,20 @@ void Input::init(int, int*, int*, const int, int*, bool*, int*)
     // The program runs in supervisor mode (main_atari.cpp), so the vector table is writable.
     if (!acia_installed)
     {
+        // Tell the IKBD to stop sending mouse packets and to report both joystick ports as events
+        // BEFORE taking over the vector: Ikbdws() is TOS's own (waiting, reliable) way to send
+        // IKBD commands, and any packet still in flight is then eaten by the system handler, not
+        // misread by ours. The direct ikbd_send() writes below stay as a second attempt.
+        {
+            static char cmd[2] = { 0x12, 0x14 };   // DISABLE MOUSE, SET JOYSTICK EVENT REPORTING
+            Ikbdws(1, cmd);                        // count is "bytes - 1"
+            volatile uint32_t* hz200 = (volatile uint32_t*)0x4BA;
+            const uint32_t t0 = *hz200;
+            while (*hz200 - t0 < 4) {}             // ~20 ms: let the IKBD act on them
+        }
         std::memset((void*)atari_scan, 0, sizeof(atari_scan));
         atari_joy1 = 0;
+        atari_joy0 = 0;
         volatile uint32_t* vec = (volatile uint32_t*)ACIA_VECTOR;
         uint16_t sr;
         __asm__ volatile ("move.w %%sr,%0" : "=d"(sr));
@@ -114,6 +127,7 @@ void Input::init(int, int*, int*, const int, int*, bool*, int*)
         // not linger as a permanently "stuck" key for the rest of the run.
         std::memset((void*)atari_scan, 0, sizeof(atari_scan));
         atari_joy1 = 0;
+        atari_joy0 = 0;
     }
 #endif
 }
@@ -125,11 +139,10 @@ void Input::shutdown()
 #ifdef __MINT__
     if (acia_installed)
     {
-        // Undo init()'s ikbd_send(0x12) (DISABLE MOUSE): without this, the IKBD stays silent on
+        // Undo init()'s DISABLE MOUSE (0x12): without this, the IKBD stays silent on
         // mouse motion/buttons forever, even after we hand the ACIA vector back to TOS, leaving
         // the desktop's cursor dead until a cold reset. 0x08 = SET RELATIVE MOUSE POSITION
         // REPORTING, the state TOS itself sets up at boot.
-        ikbd_send(0x08);
         volatile uint32_t* vec = (volatile uint32_t*)ACIA_VECTOR;
         uint16_t sr;
         __asm__ volatile ("move.w %%sr,%0" : "=d"(sr));
@@ -137,6 +150,9 @@ void Input::shutdown()
         *vec = (uint32_t)old_acia_vector;
         __asm__ volatile ("move.w %0,%%sr" : : "d"(sr) : "cc");
         acia_installed = false;
+        // Vector given back first, so the mouse packets that follow go to the system handler.
+        static char cmd[1] = { 0x08 };
+        Ikbdws(0, cmd);
     }
 #endif
 }
@@ -164,6 +180,11 @@ uint16_t Input::read_ext_ports()
     for (int g = 0; g < 4; g++)
     {
         *matrix = SELECT[g];
+        // A 68060 reads back long before the selected lines have settled (a 68000 is slow
+        // enough not to notice): NOP waits for the write to have left the CPU, then a few
+        // reads through the slow bus give the lines a couple of microseconds.
+        __asm__ volatile ("nop" ::: "memory");
+        for (int w = 0; w < 8; w++) (void)*buttons;
         const uint16_t b = (uint16_t)~*buttons;
         if (b & 0x0A) pad |= BUTTON[g];            // fire line of port A or B
         if (g == 0)
@@ -192,7 +213,10 @@ void Input::poll()
 #ifdef __MINT__
     for (int i = 0; i < NUM_SCANCODES; i++)
         scan_state[i] = atari_scan[i] != 0;
-    joy1_state = atari_joy1;    // snapshot once per poll, same reason as the scan_state[] copy above
+    // Both DB9 ports count: joystick 1 (the joystick-only port) and joystick 0 (the mouse port,
+    // which reports as a joystick since init() disabled the mouse). Snapshot once per poll, same
+    // reason as the scan_state[] copy above.
+    joy1_state = atari_joy1 | atari_joy0;
 #else
     joy1_state = 0;
 #endif

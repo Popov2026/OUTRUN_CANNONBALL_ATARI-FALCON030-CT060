@@ -1,0 +1,47 @@
+# Compiles the Atari binaries with Vincent Riviere's m68k-atari-mint cross toolchain (GCC 4.6.4,
+# the same one the port is developed with) and keeps them as a downloadable artifact:
+# CB030.TOS, CB060.TOS and PADTEST.TOS (joystick test, see tools/padtest.c).
+name: Build
+
+on:
+  push:
+    branches: [main]
+    paths: ['src/**', 'tools/**', 'build_atari.sh', 'Makefile.atari', '.github/workflows/build.yml']
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the m68k-atari-mint toolchain
+        run: |
+          sudo add-apt-repository -y ppa:vriviere/ppa
+          sudo apt-get update
+          sudo apt-get install -y cross-mint-essential
+          m68k-atari-mint-gcc --version
+
+      - name: Build CB030.TOS and CB060.TOS
+        run: |
+          CPU=68030 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB030.TOS bash ./build_atari.sh | tee build030.log
+          grep -q BUILD_OK build030.log
+          find src -name '*.o' -delete
+          CPU=68060 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB060.TOS bash ./build_atari.sh | tee build060.log
+          grep -q BUILD_OK build060.log
+
+      - name: Build PADTEST.TOS
+        run: |
+          m68k-atari-mint-gcc -O2 -mcpu=68000 -c src/main/atari/kbd_asm.S -o kbd_asm.o
+          m68k-atari-mint-gcc -O2 -mcpu=68000 -Wall tools/padtest.c kbd_asm.o -o PADTEST.TOS
+
+      - name: Package
+        run: |
+          mkdir -p out
+          cp CB030.TOS CB060.TOS PADTEST.TOS out/
+          ls -l out
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: cannonball-falcon-build
+          path: out/

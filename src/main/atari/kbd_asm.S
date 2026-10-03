@@ -3,12 +3,11 @@
 | Runs in the interrupt: reads every byte waiting in the keyboard ACIA and keeps
 |   atari_scan[scancode & 0x7f] = 1 (key down) / 0 (key up)
 | up to date.  Mouse, status and clock packets from the IKBD are skipped by length
-| (atari_ikbd_skip counts the bytes still to ignore); so is the joystick-0 packet
-| (0xfe, the port shared with the mouse - unused, never enabled by input.cpp).
-| The joystick-1 packet (0xff, the dedicated joystick-only port) is also skipped
-| by length the same way, but its one data byte is additionally latched into
-| atari_joy1 first (see ik_joy1_header/atari_ikbd_joy1pending below) instead of
-| just being discarded, since input.cpp needs it.
+| (atari_ikbd_skip counts the bytes still to ignore).  The two joystick event
+| packets are skipped by length the same way, but their one data byte is latched
+| first: 0xff (joystick 1, the joystick-only port) into atari_joy1 and 0xfe
+| (joystick 0, the port shared with the mouse, which reports as a joystick once
+| input.cpp has disabled the mouse) into atari_joy0 - see atari_ikbd_joypending.
 |
 | Keeping the state in a byte table lets the game poll the keyboard without ever
 | blocking (Bconin()/Cnecin() wait for a key press and give no key-up events).
@@ -28,9 +27,14 @@ ik_next:
 	tst.b	_atari_ikbd_skip
 	beq.s	ik_head
 	subq.b	#1,_atari_ikbd_skip
-	tst.b	_atari_ikbd_joy1pending		| this the joystick-1 packet's one data byte?
+	move.b	_atari_ikbd_joypending,%d0	| a joystick packet's one data byte? 1 = joystick 1, 2 = joystick 0
 	beq.s	ik_next
-	sf	_atari_ikbd_joy1pending
+	clr.b	_atari_ikbd_joypending
+	subq.b	#1,%d0
+	beq.s	ik_joy1_data
+	move.b	%d1,_atari_joy0
+	bra.s	ik_next
+ik_joy1_data:
 	move.b	%d1,_atari_joy1
 	bra.s	ik_next
 ik_head:
@@ -49,13 +53,19 @@ ik_up:
 ik_packet:
 	cmp.w	#0xff,%d1
 	beq.s	ik_joy1_header
+	cmp.w	#0xfe,%d1
+	beq.s	ik_joy0_header
 	sub.w	#0xf6,%d1
 	lea	ik_skiptab(%pc),%a0
 	move.b	(%a0,%d1.w),_atari_ikbd_skip
 	bra.s	ik_next
 ik_joy1_header:
 	move.b	#1,_atari_ikbd_skip		| joystick-1 event: always exactly 1 data byte
-	st	_atari_ikbd_joy1pending
+	move.b	#1,_atari_ikbd_joypending
+	bra.s	ik_next
+ik_joy0_header:
+	move.b	#1,_atari_ikbd_skip		| joystick-0 event: always exactly 1 data byte
+	move.b	#2,_atari_ikbd_joypending
 	bra.s	ik_next
 ik_done:
 	bclr	#6,0xfffffa11.w			| MFP: end of interrupt for the ACIA line
@@ -64,11 +74,12 @@ ik_done:
 
 ik_skiptab:
 	.byte	7,5,2,2,2,2,6,2,1,1		| 0xf6 status, f7 abs mouse, f8-fb mouse, fc clock, fd joysticks, fe/ff joystick
-						| (0xff/joystick-1 never actually reaches this table - see ik_joy1_header)
+						| (0xfe/0xff never actually reach this table - see ik_joy0_header/ik_joy1_header)
 
 	.even
 	.comm	_atari_scan,128
 	.comm	_atari_ikbd_skip,2
 	.comm	_atari_joy1,2			| last joystick-1 report byte: bit0 up, bit1 down, bit2 left,
 						| bit3 right, bit7 fire (1 = active) - IKBD protocol section 5.1
-	.comm	_atari_ikbd_joy1pending,2
+	.comm	_atari_joy0,2			| last joystick-0 report byte, same layout
+	.comm	_atari_ikbd_joypending,2
