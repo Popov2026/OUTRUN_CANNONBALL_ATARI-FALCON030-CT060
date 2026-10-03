@@ -62,10 +62,9 @@ int main(void)
     Cconws("   (idle value is FF; a pressed line reads 0)\r\n\r\n");
     Cconws(" Press Esc to quit.\r\n\r\n");
 
+    ssp = Super(0L);              /* system variables ($4BA) and hardware need supervisor mode */
     Ikbdws(1, cmd_on);
     wait_ticks(4);
-
-    ssp = Super(0L);
     {
         unsigned short sr;
         __asm__ volatile ("move.w %%sr,%0" : "=d"(sr));
