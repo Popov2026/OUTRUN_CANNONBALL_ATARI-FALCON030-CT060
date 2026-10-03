@@ -1,0 +1,78 @@
+# Runs PADTEST.TOS on an emulated Falcon in Hatari (EmuTOS, headless X server) and simulates the
+# joystick with the keyboard, once on DB9 joystick port 1 and once on enhanced port A (15-pin).
+# Screenshots are pushed to the ci-results branch.
+name: Hatari joystick test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  test:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install tools
+        run: |
+          sudo add-apt-repository -y ppa:vriviere/ppa
+          sudo apt-get update
+          sudo apt-get install -y cross-mint-essential hatari xvfb xdotool imagemagick unzip
+
+      - name: Build PADTEST
+        run: |
+          m68k-atari-mint-gcc -O2 -mcpu=68000 -c src/main/atari/kbd_asm.S -o kbd_asm.o
+          m68k-atari-mint-gcc -O2 -mcpu=68000 -Wall tools/padtest.c kbd_asm.o -o PADTEST.TOS
+
+      - name: Get EmuTOS
+        run: |
+          curl -fL -o emutos.zip https://github.com/emutos/emutos/releases/download/v1.3/emutos-1024k-1.3.zip \
+            || curl -fL -o emutos.zip "https://sourceforge.net/projects/emutos/files/emutos/1.3/emutos-1024k-1.3.zip/download"
+          unzip -o emutos.zip
+          cp $(find . -name 'etos1024k.img' | head -1) tos.img
+          ls -l tos.img
+
+      - name: Run tests
+        run: |
+          mkdir -p results
+          Xvfb :99 -screen 0 1024x768x24 &
+          export DISPLAY=:99
+          sleep 2
+          run_test () {
+            name=$1; shift
+            rm -rf hd; mkdir -p hd/AUTO
+            cp PADTEST.TOS hd/AUTO/PADTEST.PRG
+            hatari --confirm-quit false --machine falcon --dsp none --memsize 14 --tos tos.img \
+                   --harddrive hd --fast-boot true --sound off --statusbar false --drive-led false \
+                   "$@" > results/$name.log 2>&1 &
+            HP=$!
+            sleep 30
+            W=$(xdotool search --onlyvisible --class hatari | head -1)
+            [ -n "$W" ] && xdotool windowactivate --sync $W || true
+            import -window root results/${name}_idle.png
+            for k in Right Left Up Down Control_R; do
+              xdotool keydown $k; sleep 1.5
+              import -window root results/${name}_$k.png
+              xdotool keyup $k; sleep 0.5
+            done
+            kill $HP || true; sleep 1
+          }
+          run_test db9_port1 --joy0 none --joy1 keys --joy2 none --joy3 none
+          run_test ext_padA  --joy0 none --joy1 none --joy2 keys --joy3 none
+          for f in results/*.png; do convert "$f" -crop 680x460+0+0 "$f" || true; done
+          ls -l results
+
+      - name: Publish screenshots to the ci-results branch
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          cp -r results /tmp/results
+          git checkout --orphan ci-results
+          git rm -rf -q .
+          rm -rf ./*
+          cp -r /tmp/results/* .
+          git add -A
+          git commit -q -m "Hatari joystick test results ($GITHUB_SHA)"
+          git push -f origin ci-results
