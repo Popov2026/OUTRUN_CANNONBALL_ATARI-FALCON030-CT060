@@ -1,0 +1,69 @@
+# Builds the binaries from the current sources and publishes them as a GitHub PRE-release
+# (test version: v0.27 stays the default "latest" release). Run by hand from the Actions tab.
+# Same package layout as release.yml, plus PADTEST.TOS. No ROMs and no .mod music.
+name: Pre-release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Tag of the test version (e.g. v0.28-alpha)'
+        required: true
+        default: 'v0.28-alpha'
+
+permissions:
+  contents: write
+
+jobs:
+  prerelease:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install the m68k-atari-mint toolchain
+        run: |
+          sudo add-apt-repository -y ppa:vriviere/ppa
+          sudo apt-get update
+          sudo apt-get install -y cross-mint-essential
+
+      - name: Build
+        run: |
+          CPU=68030 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB030.TOS bash ./build_atari.sh | tee b030.log
+          grep -q BUILD_OK b030.log
+          find src -name '*.o' -delete
+          CPU=68060 EXTRA="-msoft-float -DPLATFORM_FALCON" LINKCPU=68000 OUT=CB060.TOS bash ./build_atari.sh | tee b060.log
+          grep -q BUILD_OK b060.log
+          m68k-atari-mint-gcc -O2 -mcpu=68000 -c src/main/atari/kbd_asm.S -o kbd_asm.o
+          m68k-atari-mint-gcc -O2 -mcpu=68000 -Wall tools/padtest.c kbd_asm.o -o PADTEST.TOS
+
+      - name: Package
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          set -e
+          D=pkg/OUTRUN
+          mkdir -p "$D/roms" "$D/Music"
+          cp CB030.TOS CB060.TOS PADTEST.TOS dist/outrun.ini outrun.ini.example "$D/"
+          cp -r res "$D/res"
+          cp dist/roms/README.txt dist/roms/roms.txt "$D/roms/"
+          cp dist/Music/README.txt "$D/Music/"
+          cp README.md README.fr.md docs/license.txt "$D/"
+          if find pkg -type f \( -iname '*.mod' -o -iname 'epr-*' -o -iname 'mpr-*' -o -iname 'opr-*' \) | grep .; then
+            echo "ROM or .mod file found in the package, aborting"; exit 1
+          fi
+          (cd pkg && zip -r "../cannonball_falcon_${VERSION}.zip" OUTRUN)
+          unzip -l "cannonball_falcon_${VERSION}.zip"
+
+      - name: Publish pre-release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          if gh release view "$VERSION" >/dev/null 2>&1; then
+            gh release upload "$VERSION" "cannonball_falcon_${VERSION}.zip" --clobber
+          else
+            gh release create "$VERSION" "cannonball_falcon_${VERSION}.zip" \
+              --prerelease --target "$GITHUB_SHA" \
+              --title "OutRun Cannonball Falcon ${VERSION} (test version)" \
+              --notes-file .github/prerelease-notes.md
+          fi
