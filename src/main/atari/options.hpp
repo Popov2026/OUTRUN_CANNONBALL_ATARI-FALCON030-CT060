@@ -28,7 +28,13 @@
                         instead of 18.6 (not half: the envelopes cost the same either way, only the
                         channel synthesis is halved). The price is the top octave of the FM sound (nothing above
                         ~3 kHz), so the music is duller. Sound effects on the PCM chip and .mod
-                        music are not affected. Only read at start-up.
+                        music are not affected. Only read at start-up. Ignored with fm_dsp = 1.
+      fm_dsp        1   1 = the FM chip's sound is computed by the DSP56001 (atari/fmdsp.hpp): the
+                        same samples as the 68k's emulation, at no cost to the 68k beyond
+                        sending the register changes and reading the samples back. The FM sound
+                        then comes one game step late, and the PCM sound with it. While a .mod
+                        is played on the DSP (mod_dsp = 1 or 2) the FM goes back to the 68k.
+                        0 = always on the 68k. Falls back to 0 if there is no DSP.
       mod           0   1 = replace the 3 selectable music tracks, plus the Last Wave
                         ending/high-score tune, with .mod files loaded from a "Music" folder next
                         to this .ini (Music\TRACK1.MOD = Magical Sound Shower, Music\TRACK2.MOD =
@@ -76,6 +82,7 @@ struct AtariOptions
     int sound;
     int music;
     int fm_half;
+    int fm_dsp;
     int mod;
     int mod_dsp;
     int freemint;

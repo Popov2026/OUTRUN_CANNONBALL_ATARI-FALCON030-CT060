@@ -54,6 +54,8 @@ Contains:
 | `audio.cpp` / `.hpp` | DMA sound backend — takes the buffers already synthesised by the engine (YM2151 + SegaPCM, untouched), mixes them with the `.mod` player if active (`-DMOD_MUSIC`), and pushes the result to the sound DMA. |
 | `modplayer.cpp` / `.hpp` | `.mod` file player (Amiga ProTracker, 4 channels) that plays the game music instead of the FM chip when `mod=1` (`Music\TRACK1.MOD` to `TRACK4.MOD`, supplied by the user). Detects both header variants (15 and 31 samples), handles the common effects (arpeggio, portamento, vibrato, volume slide, position jump, tempo). Mixed on the CPU by default. With `mod_dsp=1`, the module is played by the DSP (`dsp_replay.*`): the replay interrupt advances the pattern and reads the samples, and `mix()` then does nothing. |
 | `dsp_replay.cpp` / `.hpp` / `dsp_replay_asm.S` / `dsp_tracker_p56.h` | `.mod` playback by the DSP56001 (`mod_dsp` option). The DSP side is the SoundTracker replay by Simplet / ABSTRACT (`dsptrack` archive on dhs.nu), unmodified (`dsp_tracker_p56.h`). The 68k side runs from a 50 Hz Timer A interrupt: each frame it sends the DSP the volume and pitch of each voice, then the sample bytes requested (nothing is stored on the DSP, so there is no limit on module size). Six voices: the module's 4, plus a stereo pair carrying the game's FM + PCM mix, since the DAC only listens to the DSP while this mode is active. Checked under Hatari `--dsp emu` (capture of the samples sent to the DAC). |
+| `dspmod.cpp` / `.hpp` / `dspmod_asm.S` / `dspmod_tce.h` | `.mod` playback with DSPMOD 3.4 by bITmASTER of TCE (`mod_dsp=2`, manual in `docs/dspmod.txt`). DSPMOD's own 68k code (relocated here, caches flushed, so it is safe with a 68060 copyback cache) and DSP program play the module as it is; a 50 Hz Timer A interrupt calls its PlayMusic. The game's FM + PCM mix goes through two of its effect voices, looping ring buffers kept a steady distance ahead of the reader. 4-voice modules. |
+| `fmdsp.cpp` / `.hpp` / `fm_dsp_p56.h` | FM synthesis on the DSP56001 (`fm_dsp=1`). The 68k's YM2151 object still decodes the register writes and runs the timers; a hook at the end of `YM2151::write_reg()` marks what changed, and once per game step the changes (operator frequency, level, D1L, envelope rates; channel algorithm, feedback, pan; key on/off, in write order) and a render command go through the host port. The DSP sends back the previous step (or a single word if it was silent) and computes the new one. `fm_dsp_p56.h` is built from `tools/fmdsp/fm_dsp.asm` (see below). `audio.cpp` delays the PCM by one step to stay in time with it; the mod players call `fmdsp.stop()` before taking the DSP. |
 | `gemredraw.cpp` | Asks the AES to redraw the whole screen when the game exits (only called under MiNT, i.e. under a multitasking AES such as XaAES, which does not redraw the desktop by itself). |
 | `screenshot.cpp` / `.hpp` | F9 screenshot, saved as `SHOTnnnn.PNG` in the program's folder. |
 | `video_falcon.cpp` | Falcon video backend: the engine composes a palette-index picture in a shared buffer (`src/main/video.cpp`); this file converts it to 16-bit true colour (RGB565) through a single 65536-colour lookup table. |
@@ -62,6 +64,16 @@ Contains:
 | `tile_asm.S` | Draws an 8x8 tile (4 bits/pixel, 0 = transparent) into the index buffer. |
 | `truecolor_asm.S` | Final index → RGB565 conversion (`dst[i] = pal[px[i]]`), Falcon-specific. |
 | `pcm_asm.S` | Inner loop of one SegaPCM channel (sample fetch, volume, looping). |
+
+## `tools/fmdsp/` — FM on the DSP: program and checks
+
+| File | Role |
+|---|---|
+| `fm_dsp.asm` | The DSP56001 program (a56 syntax): envelope generator, phases, operators, the 8 algorithms, feedback, stereo mix, exactly as `hwaudio/ym2151.cpp` computes them (LFO, noise and CSM left out: OutRun does not use them). Per-sample code in the internal program RAM; envelopes kept in lists by rate shift so only the operators that move at an EG step are looked at. Event protocol in its header. |
+| `build_dsp.sh`, `lod2h.py` | Assemble it with a56 (stops on any warning, pipeline hazards included) and write `src/main/atari/fm_dsp_p56.h`. |
+| `fm_engine.h`, `fmmodel.cpp` | Host model of what the DSP computes, checked bit-exact against `ym2151.cpp` on register logs of the three music tracks; writes the event stream (`EVENTS.BIN`) and the expected output. |
+| `ymref.cpp` | Host reference: plays a register log through `ym2151.cpp` into a WAV. |
+| `fmtest.cpp` | `FMTEST.TOS`: replays `EVENTS.BIN` on the real DSP (or Hatari's), writes the output (`FMOUT.RAW`, compared with the model's: 0 differing samples over 120 s of each track) and the DSP time of each step (`FMTIME.BIN`). |
 
 ## Hooks in the shared engine (`#ifdef PLATFORM_ATARI` / `PLATFORM_FALCON`)
 
@@ -77,6 +89,8 @@ were touched for the port.
 | `src/main/hwvideo/hwroad.cpp` | Switches between `atari_road_copy1/2` and their `_half` variants according to `atari_opt.road_hres` (see table above). |
 | `src/main/hwvideo/hwsprites.cpp` | Calls the assembler sprite routines (`sprite_asm030.S`). |
 | `src/main/hwvideo/hwtiles.cpp` | Calls `atari_tile8` (Falcon only) instead of the generic C++ renderer. |
+| `src/main/hwaudio/ym2151.cpp` | `ym2151_write_hook`, called at the end of `write_reg()` (FM on the DSP), and accessors for the tables and envelope timing the DSP program needs. |
+| `src/main/engine/audio/osoundint.cpp` | The FM chip runs at half the mixing rate with `fm_half=1`, unless `fm_dsp=1`. |
 | `src/main/hwaudio/segapcm.cpp` | Calls `atari_pcm_channel` instead of the generic C++ loop for each PCM channel. Also contains the `-DPERF_PRINT -DPCM_MEASURE_FILE` per-channel cost measurement (written to `PCMLOG.TXT`, not to the console — see the methodology note below). |
 | `src/main/engine/omusic.cpp` | `play_music()`: in a `-DMOD_MUSIC` build, starts the `.mod` player instead of the YM2151 command for the 3 selectable tracks (not Last Wave, which is triggered elsewhere). Otherwise unchanged (normal YM2151 command), with the `atari_opt.music` check to turn off the music without touching the sound effects. |
 | `src/main/engine/ostats.cpp` | `OStats::init()`: `-DFORCE_CREDIT_TEST` test aid (credit=1 at boot, never in a normal build) — used because synthetic key injection in Hatari never proved reliable for automatically validating a screen that needs a credit. |

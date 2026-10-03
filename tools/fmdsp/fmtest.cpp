@@ -88,7 +88,10 @@ int main()
         words++;
         if ((w >> 16) == 4)
         {
-            for (uint32_t i = 0; ok && i < prev * 2; i++)
+            uint32_t n = 0;
+            if (prev) { ok = recv(&n); n &= 0xffff; }   // words that follow: 0 = silent step
+            for (uint32_t i = 0; i < prev * 2 * 2; i++) samples[i] = 0;
+            for (uint32_t i = 0; ok && i < n; i++)
             {
                 uint32_t v = 0;
                 ok = recv(&v);
@@ -113,7 +116,10 @@ int main()
     if (ok && prev)
     {
         ok = send(last);
-        for (uint32_t i = 0; ok && i < prev * 2; i++)
+        uint32_t n = 0;
+        ok = recv(&n); n &= 0xffff;
+        for (uint32_t i = 0; i < prev * 2 * 2; i++) samples[i] = 0;
+        for (uint32_t i = 0; ok && i < n; i++)
         {
             uint32_t v = 0;
             ok = recv(&v);

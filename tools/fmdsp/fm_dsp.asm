@@ -12,8 +12,9 @@
 ;   $02000c  channel c settings, then 2 words: con<<8|fb_shift, pan (bit0 L, bit1 R)
 ;   $0300vv  key on/off (register 8 value)
 ;   $0400nn  render one game step of nn frames: the program first sends back the
-;            previous step (2*frames words, L then R, 16-bit in the low bits),
-;            then computes this one
+;            previous step - a word giving how many follow (2*frames, or 0 when
+;            that step was silent), then the samples (L, R, 16-bit in the low
+;            bits) - then computes this one
 ;   $050000  set up: then sin_tab (1024 words), tl_tab (6656), eg_inc (152),
 ;            eg_timer_add, eg_timer_overflow; answers $FA5E00 when done
 ;   $060000  answers $AC0000 (test aid: tells when the last render is finished)
@@ -51,6 +52,7 @@ TMP	equ	$2c
 KEYV	equ	$2d
 RATEW	equ	$30		; the four rate words of an operator event
 DIRTY	equ	$34		; the rate lists must be rebuilt
+CURSIL	equ	$2e		; the step in BUFCUR is silent (not sent)
 NEMPTY	equ	$37		; bit sh set: rate list sh is not empty
 KHALF	equ	$36		; $400000: pm scale of M2, C1, C2 (index += pm / 2)
 B_NONE	equ	$38		; pan buckets: channel outputs summed by pan (B_NONE + pan)
@@ -129,6 +131,8 @@ TLLEN	equ	6656
 ; ---------------------------------------------------------------------------
 ; render, continued from ev_render
 rn_frames
+	clr	a
+	move	a,x:CURSIL
 	jsr	build_lists
 	move	x:BUFCUR,x0
 	move	x0,x:OUTP
@@ -750,7 +754,14 @@ ev_render
 	move	x:PREVN,a
 	tst	a
 	jeq	rn_nosend
-	asl	a
+	asl	a			; 2 * frames words follow,
+	move	x:CURSIL,b
+	tst	b
+	jeq	rn_hdr
+	clr	a			; or none if that step was silent
+rn_hdr	jsr	put
+	tst	a
+	jeq	rn_nosend
 	move	a1,x0
 	move	x:BUFCUR,r0
 	do	x0,rn_send
@@ -824,14 +835,10 @@ rn_chon
 	move	x:NACT,a
 	tst	a
 	jne	rn_frames
-	; nothing can sound: silence, and nothing else moves (ym2151.cpp skip_frame)
-	clr	a
-	move	x:TMP,b
-	asl	b
-	move	b1,x1
-	do	x1,rn_sil
-	move	a,x:(r7)+
-rn_sil
+	; nothing can sound: silence, and nothing else moves (ym2151.cpp skip_frame);
+	; the next render sends no samples for it
+	move	#>1,x0
+	move	x0,x:CURSIL
 	jmp	main
 
 

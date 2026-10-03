@@ -12,6 +12,7 @@
 #include "atari/options.hpp"
 #include "atari/dsp_replay.hpp"
 #include "atari/dspmod.hpp"
+#include "atari/fmdsp.hpp"
 
 ModPlayer modplayer;
 
@@ -108,6 +109,7 @@ bool ModPlayer::load(const char* filename, uint32_t mix_rate)
     // the samples to its DSP program). Modules it does not take fall back to the parser below.
     if (atari_opt.mod_dsp == 2 && fsize >= 1084)
     {
+        fmdsp.stop();   // the DSP goes to DSPMOD (the FM sound back to the 68k meanwhile)
         if (dspmod.play(raw, mix_rate))
         {
             dspmod_raw = raw;
@@ -220,6 +222,8 @@ bool ModPlayer::load(const char* filename, uint32_t mix_rate)
     // silence), so the interrupt can hand the DSP one frame's worth in a single run.
     dsp_mode = false;
     dsp_tempo_acc = 0;
+    if (atari_opt.mod_dsp == 1 && num_channels <= 4)
+        fmdsp.stop();   // the DSP goes to the replay (the FM sound back to the 68k meanwhile)
     if (atari_opt.mod_dsp == 1 && num_channels <= 4 && dsp_replay.start())
     {
         for (int i = 0; i < num_samples; i++)

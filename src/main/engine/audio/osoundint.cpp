@@ -41,8 +41,9 @@ void OSoundInt::init()
     pcm->init(config.sound.rate, config.fps);
 #ifdef PLATFORM_ATARI
     // outrun.ini's fm_half: FM chip at half the mixing rate, see atari/options.hpp and
-    // atari/audio.cpp (which brings its output back to the mixing rate).
-    ym->init(atari_opt.fm_half ? config.sound.rate / 2 : config.sound.rate, config.fps);
+    // atari/audio.cpp (which brings its output back to the mixing rate). Not with fm_dsp: the
+    // DSP computes the FM sound at the mixing rate.
+    ym->init(atari_opt.fm_half && !atari_opt.fm_dsp ? config.sound.rate / 2 : config.sound.rate, config.fps);
 #else
     ym->init(config.sound.rate, config.fps);
 #endif

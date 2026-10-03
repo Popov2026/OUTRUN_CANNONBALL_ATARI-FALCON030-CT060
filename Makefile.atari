@@ -84,6 +84,7 @@ SOURCES := \
 	$(SRC)/atari/dsp_replay.cpp \
 	$(SRC)/atari/gemredraw.cpp \
 	$(SRC)/atari/dspmod.cpp \
+	$(SRC)/atari/fmdsp.cpp \
 	$(SRC)/atari/screenshot.cpp
 
 ASMSRC  := $(SRC)/atari/video_asm.S $(SRC)/atari/sprite_asm.S $(SRC)/atari/sprite_asm030.S $(SRC)/atari/truecolor_asm.S $(SRC)/atari/road_asm.S $(SRC)/atari/tile_asm.S $(SRC)/atari/dsp_replay_asm.S $(SRC)/atari/dspmod_asm.S

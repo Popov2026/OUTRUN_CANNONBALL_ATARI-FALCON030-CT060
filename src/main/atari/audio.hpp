@@ -30,6 +30,8 @@
         atari/dsp_replay.cpp rather than to the DMA.
       - outrun.ini's fm_half=1 makes the FM chip produce half as many
         samples; tick() interpolates them back to the mix rate.
+      - outrun.ini's fm_dsp=1 has the DSP compute the FM sound (fmdsp.hpp);
+        tick() then mixes it with the PCM sound of the same step.
 
     Copyright (c) port authors. See license.txt for more details.
 ***************************************************************************/
@@ -82,5 +84,9 @@ private:
     wav_t wavfile;
 
     void clear_buffers();
+    bool use_fmdsp();
+#ifdef AUDIO_TIMING
+    void tick_body();
+#endif
     void start_dma(int8_t* buffer, uint32_t bytes);
 };

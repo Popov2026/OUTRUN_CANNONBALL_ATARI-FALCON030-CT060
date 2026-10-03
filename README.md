@@ -193,7 +193,8 @@ Each option is described in [`outrun.ini.example`](outrun.ini.example).
 | `cadence` | 0..4 | 0 | Game steps between two frames: 0 = auto, 1 = 30 fps, 2 = 15, 3 = 10, 4 = 7.5 |
 | `sound` | 0 / 1 / 2 | 2 | 0 = silent, 1 = sound always synthesised, 2 = sound only when CPU time is left |
 | `music` | 0 / 1 | 1 | Turns the music off without affecting sound effects |
-| `fm_half` | 0 / 1 | 0 | FM chip emulated at half rate: cheaper, but duller sound |
+| `fm_half` | 0 / 1 | 0 | FM chip emulated at half rate: cheaper, but duller sound (with `fm_dsp=0` only) |
+| `fm_dsp` | 0 / 1 | 1 | The FM chip (YM2151) is computed by the Falcon's **DSP56001**: same sound, bit for bit, for a fraction of the CPU time (see below) |
 | `mod` | 0 / 1 | 0 | Replaces the FM music with `.mod` files (see below) |
 | `mod_dsp` | 0 / 1 / 2 | 0 | Plays the `.mod` files on the Falcon's **DSP56001** instead of the CPU: 1 = SoundTracker replay (Simplet / ABSTRACT), 2 = DSPMOD 3.4 (bITmASTER of TCE) |
 | `freemint` | 0 / 1 | 1 | Long ROM names (1) or names renamed to 8.3 (0) |
@@ -206,7 +207,7 @@ Jaguar pad, `b` / `c` = Jaguar pad buttons B and C. Example, button to accelerat
 `joy_accel = fire`, `joy_brake = down`, `joy_gear = up`. Left/right always steer, and the keyboard
 always works too.
 
-The supplied `dist/outrun.ini` sets `sound=1`, `mod=1` and `mod_dsp=1`.
+The supplied `dist/outrun.ini` sets `sound=1`, `fm_dsp=1`, `mod=1` and `mod_dsp=1`.
 **Lighter settings for the original Falcon 030:** `scenery=0`, `vscale=67` (or 50), `mod=1`,
 `mod_dsp=1`.
 
@@ -246,15 +247,16 @@ mount that folder as a GEMDOS drive:
 
 ```bash
 # Original Falcon 030
-hatari --machine falcon --memsize 14 --dsp none --tos tos.img \
+hatari --machine falcon --memsize 14 --dsp emu --tos tos.img \
        --harddrive <folder>
 
 # Falcon + 68060 with Fast RAM (CT60-like configuration)
 hatari --machine falcon --memsize 14 --ttram 32 --cpulevel 6 --cpuclock 32 \
-       --addr24 false --tos tos.img --harddrive <folder>
-
-# For .mod music played by the DSP: replace --dsp none with --dsp emu
+       --addr24 false --dsp emu --tos tos.img --harddrive <folder>
 ```
+
+`--dsp emu` is needed for the FM on the DSP (`fm_dsp=1`) and for the `.mod` music played by
+the DSP. With `--dsp none` the game falls back to the CPU by itself.
 
 These commands were tested with `tos.img` = EmuTOS 1.4, which comes with Hatari.
 
@@ -340,6 +342,17 @@ In short:
 - **Sound.** The YM2151 (FM) and the SegaPCM are emulated, then mixed and sent to the
   Falcon DMA sound at 12,517 Hz, with four buffers. Optionally, `.mod` files are played
   by the CPU or by the DSP56001 (see above).
+- **FM on the DSP** (`fm_dsp=1`). Emulating the YM2151 is the most expensive part of the
+  sound: with the FM music playing, a 68030 needs about 0.3 s of CPU time per game step
+  (1/30 s), hence the stuttering music. The FM synthesis (envelopes, the 4 operators of the
+  8 channels, the 8 algorithms, feedback, stereo) is done by a DSP56001 program instead
+  (`tools/fmdsp/fm_dsp.asm`). The 68k only decodes the register writes, sends what changed
+  through the DSP host port and reads the samples back: about 15 ms per step on a Falcon
+  030 for the whole sound, instead of 300+ ms. The DSP's output is checked to be **identical
+  sample for sample** to the CPU emulation (the three music tracks in full on the host model
+  and in Hatari's DSP emulation, then the game itself), and it needs on average 11 ms of DSP
+  time per step, 26 ms at worst. The FM and PCM sound come out one step (1/30 s) late.
+  While a `.mod` is played on the DSP, the FM goes back to the CPU.
 - **Input.** An assembler keyboard interrupt handler (`kbd_asm.S`) replaces the ACIA vector
   while the game runs and restores it on exit. It reads the IKBD joystick and the enhanced
   joystick ports.
@@ -403,6 +416,9 @@ Feedback is welcome, especially from real hardware (original Falcon 030, CT60/CT
   [Reassembler blog](http://reassembler.blogspot.com/)). This port would not exist without
   their work.
 - **SoundTracker DSP replay**: Simplet / ABSTRACT (`dsptrack` archive, dhs.nu).
+- **DSPMOD 3.4**: bITmASTER of TCE.
+- **YM2151 emulation**: Jarek Burczynski (MAME), as used by Cannonball; the DSP56001 FM
+  program follows it exactly.
 - **Atari Falcon port** (Falcon 030 / CT60 / CT63): Popov2026.
 
 This repository is distributed under the **Cannonball licence** ([`docs/license.txt`](docs/license.txt)):

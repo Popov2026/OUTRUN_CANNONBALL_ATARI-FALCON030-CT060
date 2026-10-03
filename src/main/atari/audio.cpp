@@ -15,6 +15,7 @@
 #include "atari/modplayer.hpp"
 #include "atari/dsp_replay.hpp"
 #include "atari/dspmod.hpp"
+#include "atari/fmdsp.hpp"
 #include "atari/options.hpp"
 #include "frontend/config.hpp"
 #include "engine/audio/osoundint.hpp"
@@ -120,14 +121,44 @@ void Audio::start_dma(int8_t* buffer, uint32_t bytes)
 
 // Called every game tick (see main_atari.cpp's main_loop(), same call site
 // as the SDL version's audio.tick()).
+#ifdef AUDIO_TIMING
+// Test aid: 68k time spent in tick(), in 1/38400 s (200 Hz counter + MFP Timer C), averaged
+// over 300 steps into AUDT.TXT.
+static uint32_t fine_time()
+{
+    volatile uint32_t* hz = (volatile uint32_t*)0x4BAL;
+    volatile uint8_t* tcdr = (volatile uint8_t*)0xfffffa23L;
+    uint32_t a, b; uint8_t c;
+    do { a = *hz; c = *tcdr; b = *hz; } while (a != b);
+    return a * 192 + (192 - c);
+}
 void Audio::tick()
+{
+    const uint32_t t0 = fine_time();
+    tick_body();
+    static uint32_t sum = 0, n = 0, mx = 0;
+    const uint32_t dt = fine_time() - t0;
+    sum += dt; if (dt > mx) mx = dt;
+    if (++n == 300)
+    {
+        FILE* f = fopen("AUDT.TXT", "a");
+        if (f) { fprintf(f, "fm_dsp=%d tick avg %lu us max %lu us\r\n", fmdsp.active() ? 1 : 0, (unsigned long)(sum / n * 26), (unsigned long)(mx * 26)); fclose(f); }
+        sum = n = mx = 0;
+    }
+}
+void Audio::tick_body()
+#else
+void Audio::tick()
+#endif
 {
     if (!sound_enabled) return;
 
     uint32_t a0 = PERF_NOW();
     osoundint.pcm->stream_update();
     uint32_t a1 = PERF_NOW();
-    osoundint.ym->stream_update();
+    const bool fm_on_dsp = use_fmdsp();
+    if (fm_on_dsp) osoundint.ym->skip_frame();   // timers only: the DSP makes the sound
+    else           osoundint.ym->stream_update();
     uint32_t a2 = PERF_NOW();
 
     int16_t* pcm_buffer = osoundint.pcm->get_buffer();
@@ -137,11 +168,25 @@ void Audio::tick()
     if (frames > DMA_BUFFER_SAMPLES) frames = DMA_BUFFER_SAMPLES;
     uint32_t samples = frames;
 
+    // FM on the DSP (outrun.ini's fm_dsp, fmdsp.hpp): it gives back the previous step, so the
+    // PCM chip's output is delayed by one step too (the music's drums are on the PCM chip).
+    static int16_t pcm_late[DMA_BUFFER_SAMPLES * 2];
+    static int16_t fm_silence[DMA_BUFFER_SAMPLES * 2];
+    if (fm_on_dsp)
+    {
+        const int16_t* fm = fmdsp.step(frames);
+        static int16_t pcm_now[DMA_BUFFER_SAMPLES * 2];
+        std::memcpy(pcm_now, pcm_late, frames * 4);
+        std::memcpy(pcm_late, pcm_buffer, frames * 4);
+        pcm_buffer = pcm_now;
+        ym_buffer = fm ? (int16_t*)fm : fm_silence;
+    }
+
     // outrun.ini's fm_half: the FM chip produced half as many frames as the PCM chip. Each one
     // is used for an even output frame, and the odd frames in between are the average of their
     // two neighbours (the last one of a step repeats: the next step is not synthesised yet).
     static int16_t ym_full[DMA_BUFFER_SAMPLES * 2];
-    if (atari_opt.fm_half)
+    if (atari_opt.fm_half && !fm_on_dsp && osoundint.ym->buffer_size < osoundint.pcm->buffer_size)
     {
         const uint32_t half = osoundint.ym->buffer_size / 2;   // frames the chip produced
         for (uint32_t f = 0; f < frames; f++)
@@ -277,6 +322,18 @@ void Audio::tick_muted()
     if (!sound_enabled) return;
     osoundint.pcm->stream_update();   // sample-end flags are read by the game
     osoundint.ym->skip_frame();
+    if (fmdsp.active()) fmdsp.step(osoundint.pcm->buffer_size / 2);   // the DSP's FM chip keeps up
+}
+
+// True when the FM sound of this step is to be computed by the DSP (fmdsp.hpp): asked for in
+// outrun.ini, the DSP not taken by a .mod replay, and the FM chip at the mixing rate. Starts the
+// DSP program if needed (at start-up, or once a DSP .mod replay has given the DSP back).
+bool Audio::use_fmdsp()
+{
+    if (!atari_opt.fm_dsp || dsp_replay.active() || dspmod.active()) return false;
+    if (osoundint.ym->buffer_size != osoundint.pcm->buffer_size || osoundint.pcm->buffer_size / 2 > FmDsp::MAX_FRAMES)
+        return false;
+    return fmdsp.start();
 }
 
 // Interface shared with the SDL backend; no speed correction is needed here.

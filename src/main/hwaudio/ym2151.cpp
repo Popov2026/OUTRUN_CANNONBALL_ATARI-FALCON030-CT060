@@ -975,6 +975,12 @@ FILE* g_ym_log = 0;        // -DMUSIC_RENDER: every register write is logged as 
 int   g_render_tick = 0;
 #endif
 
+#ifdef PLATFORM_ATARI
+// Called after every register write that reached the chip (atari/fmdsp.cpp sets it while the FM
+// sound is computed by the DSP: what the write changed is sent there).
+void (*ym2151_write_hook)(int r, int v) = 0;
+#endif
+
 void YM2151::write_reg(int r, int v)
 {
 #ifdef MUSIC_RENDER
@@ -1295,6 +1301,9 @@ void YM2151::write_reg(int r, int v)
         op->eg_sel_rr = eg_rate_select[op->rr  + (op->kc>>op->ks) ];
         break;
     }
+#ifdef PLATFORM_ATARI
+    if (ym2151_write_hook) ym2151_write_hook(r, v);   // FM on the DSP (atari/fmdsp.cpp)
+#endif
 }
 
 int YM2151::read_status()
