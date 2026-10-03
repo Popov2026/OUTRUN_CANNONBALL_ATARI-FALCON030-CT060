@@ -2290,3 +2290,11 @@ void YM2151::skip_frame()
         }
     }
 }
+
+// FM synthesis on the DSP (atari/fm_dsp.*, tools/fmdsp/): the tables built by init_tables()
+// and the envelope timing, which the DSP program needs as they are here.
+const signed int*   ym2151_tl_tab()  { return tl_tab; }
+const unsigned int* ym2151_sin_tab() { return sin_tab; }
+const uint8_t*      ym2151_eg_inc()  { return eg_inc; }
+uint32_t            ym2151_eg_timer_add()      { return eg_timer_add; }
+uint32_t            ym2151_eg_timer_overflow() { return eg_timer_overflow; }
