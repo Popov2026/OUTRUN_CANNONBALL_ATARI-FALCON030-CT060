@@ -1,0 +1,7 @@
+rate 48000 channels 2 seconds 14.0 peak 8925
+left strongest: [466, 14449, 15381, 14211, 13279]
+   440 Hz: present (476 x median)
+  1000 Hz: present (24 x median)
+right strongest: [466, 14449, 15381, 18874, 19806]
+   440 Hz: present (424 x median)
+  1500 Hz: MISSING (6 x median)
