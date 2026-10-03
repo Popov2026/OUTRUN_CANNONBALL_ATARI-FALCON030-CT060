@@ -6,7 +6,6 @@
 
 #include <cstring>
 #include "atari/dspmod.hpp"
-#include "frontend/config.hpp"
 
 DspMod dspmod;
 
@@ -132,7 +131,7 @@ bool DspMod::init_once()
     return true;
 }
 
-bool DspMod::play(uint8_t* mod)
+bool DspMod::play(uint8_t* mod, uint32_t rate)
 {
     stop_song();
     // DSPMOD knows "M.K.", "FLT4", "CD8 ", "CD81", "FA08". "M!K!" is the same 4-voice format
@@ -146,7 +145,7 @@ bool DspMod::play(uint8_t* mod)
 
     std::memset(ring_l, 0, sizeof(ring_l));
     std::memset(ring_r, 0, sizeof(ring_r));
-    base_period = (int)((3546895 + config.sound.rate / 2) / config.sound.rate);   // Amiga PAL clock
+    base_period = (int)((3546895 + rate / 2) / rate);   // Amiga PAL clock
     period = base_period;
     // fx(channel, period, volume 0..64, stereo position -63..63, start, end, repeat start, repeat length)
     call(DM_FX, 0, period, 64, (uint32_t)-63, ring_l, ring_l + RING, ring_l, RING);
@@ -219,7 +218,7 @@ void DspMod::push_fx(const int8_t* lr, uint32_t frames)
 }
 
 #else
-bool DspMod::play(uint8_t*) { return false; }
+bool DspMod::play(uint8_t*, uint32_t) { return false; }
 void DspMod::stop_song() {}
 void DspMod::shutdown() {}
 void DspMod::frame() {}

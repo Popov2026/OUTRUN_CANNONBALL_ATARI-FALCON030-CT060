@@ -108,7 +108,7 @@ bool ModPlayer::load(const char* filename, uint32_t mix_rate)
     // the samples to its DSP program). Modules it does not take fall back to the parser below.
     if (atari_opt.mod_dsp == 2 && fsize >= 1084)
     {
-        if (dspmod.play(raw))
+        if (dspmod.play(raw, mix_rate))
         {
             dspmod_raw = raw;
             song_loaded = true;

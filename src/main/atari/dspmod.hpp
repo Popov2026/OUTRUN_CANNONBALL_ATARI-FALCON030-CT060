@@ -30,8 +30,9 @@ class DspMod
 {
 public:
     // Starts playing `mod` (the whole .mod file, which must stay allocated until
-    // stop_song()). Sets DSPMOD up the first time. False if the module is not accepted.
-    bool play(uint8_t* mod);
+    // stop_song()); `rate` is the rate push_fx() samples come at. Sets DSPMOD up the
+    // first time. False if the module is not accepted.
+    bool play(uint8_t* mod, uint32_t rate);
     // Stops the module; DSPMOD stays set up for the next one.
     void stop_song();
     // Stops everything and gives the sound matrix, the DSP and Timer A back.
