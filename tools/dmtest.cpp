@@ -38,11 +38,12 @@ int main()
     if (log) fprintf(log, "TEST.MOD size=%ld\r\n", size);
 
     bool ok = mod && dspmod.play(mod, RATE);
-    if (log) fprintf(log, "play=%d active=%d\r\n", (int)ok, (int)dspmod.active());
+    if (log) fprintf(log, "play=%d active=%d ring_l=%08lx\r\n", (int)ok, (int)dspmod.active(), 0UL);
+    if (log) { fclose(log); log = fopen("DMTEST.TXT", "a"); }
 
     static int8_t lr[STEP_FRAMES * 2];
-    static int8_t sine[RATE];   // one second of a 1 Hz sine: index = phase in 1/RATE turns
-    for (uint32_t i = 0; i < RATE; i++) sine[i] = (int8_t)(60.0 * sin(2 * M_PI * i / RATE));
+    static int8_t sine[256];   // one cycle; soft-float sin() is far too slow to call per sample
+    for (int i = 0; i < 256; i++) sine[i] = (int8_t)(60.0 * sin(2 * M_PI * i / 256));
     uint32_t phase_l = 0, phase_r = 0, steps = 0;
     const uint32_t t0 = *hz200;
     uint32_t next = t0 * 3;   // in 1/600 s, like the game's main loop: 20 units = 1/30 s
@@ -52,13 +53,26 @@ int main()
         next += 20;
         for (uint32_t i = 0; i < STEP_FRAMES; i++)
         {
-            lr[i * 2]     = sine[phase_l];
-            lr[i * 2 + 1] = sine[phase_r];
+            lr[i * 2]     = sine[phase_l * 256 / RATE];
+            lr[i * 2 + 1] = sine[phase_r * 256 / RATE];
             phase_l = (phase_l + 1000) % RATE;
             phase_r = (phase_r + 1500) % RATE;
         }
         dspmod.push_fx(lr, STEP_FRAMES);
         steps++;
+        if (log && (steps % 30) == 1)
+        {
+            fprintf(log, "step %lu hz200 %lu\r\n", (unsigned long)steps, (unsigned long)(*hz200 - t0));
+            for (int v = 0; v < 6; v++)
+            {
+                uint32_t st[8];
+                dspmod.voice_state(v, st);
+                fprintf(log, "  v%d ptr %08lx end %08lx rep %08lx len %5lu per %4lu vol %3lu main %5lx pos %4lx\r\n", v,
+                        (unsigned long)st[0], (unsigned long)st[1], (unsigned long)st[2], (unsigned long)st[3],
+                        (unsigned long)st[4], (unsigned long)st[5], (unsigned long)st[6], (unsigned long)st[7]);
+            }
+            fclose(log); log = fopen("DMTEST.TXT", "a");
+        }
     }
     if (log) fprintf(log, "steps=%lu\r\n", (unsigned long)steps);
     dspmod.shutdown();

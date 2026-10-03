@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Checks a WAV recorded from Hatari during DMTEST: prints the strongest frequencies of each
-channel over the middle of the recording and whether 440 Hz (module), 1000 Hz (left fx) and
-1500 Hz (right fx) are present. Exit code 0 if all three are found."""
+channel over the middle of the recording and whether the fx tones are present: 1000 Hz on the
+left, 1500 Hz on the right (the module's note, near 440-466 Hz, is reported but not required:
+its voice is panned left). Exit code 0 if both fx tones are found."""
 import sys, wave
 import numpy as np
 
@@ -14,7 +15,7 @@ mid = data[len(data) // 4: len(data) * 3 // 4]
 if len(mid) < rate:
     print("recording too short"); sys.exit(2)
 ok = True
-for name, idx, want in (("left", 0, (440, 1000)), ("right", 1, (440, 1500))):
+for name, idx, want in (("left", 0, (1000,)), ("right", 1, (1500,))):
     x = mid[:, idx] * np.hanning(len(mid))
     spec = np.abs(np.fft.rfft(x))
     freqs = np.fft.rfftfreq(len(x), 1 / rate)

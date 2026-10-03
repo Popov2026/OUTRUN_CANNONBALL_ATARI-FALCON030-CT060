@@ -45,6 +45,10 @@ public:
 
     void frame();   // one 1/50 s frame - called from the Timer A interrupt only
 
+    // Test aid: DSPMOD's state for voice `v` (0..7): pointer, end, repeat start, repeat
+    // length, period, volume, main volume, stereo position.
+    void voice_state(int v, uint32_t out[8]) const;
+
 private:
     volatile bool playing;
     bool relocated, initialised;

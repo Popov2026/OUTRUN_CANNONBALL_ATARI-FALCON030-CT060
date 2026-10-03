@@ -217,7 +217,15 @@ void DspMod::push_fx(const int8_t* lr, uint32_t frames)
     if (p != period) { period = p; v[4].period = (int16_t)p; v[5].period = (int16_t)p; }
 }
 
+void DspMod::voice_state(int i, uint32_t out[8]) const
+{
+    const DmVoice& v = voices()[i];
+    out[0] = v.ptr; out[1] = v.end; out[2] = v.rep_start; out[3] = v.rep_len;
+    out[4] = (uint16_t)v.period; out[5] = (uint16_t)v.vol; out[6] = (uint16_t)v.main_vol; out[7] = (uint16_t)v.pos;
+}
+
 #else
+void DspMod::voice_state(int, uint32_t out[8]) const { for (int i = 0; i < 8; i++) out[i] = 0; }
 bool DspMod::play(uint8_t*, uint32_t) { return false; }
 void DspMod::stop_song() {}
 void DspMod::shutdown() {}
