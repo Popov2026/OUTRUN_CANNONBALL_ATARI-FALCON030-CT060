@@ -40,6 +40,7 @@ jobs:
           mkdir -p results && cp tos.img results/etos512us.img   # EmuTOS (GPL), for running Hatari elsewhere
 
       - name: Run DMTEST in Hatari
+        timeout-minutes: 4
         run: |
           mkdir -p results hd/AUTO
           cp DMTEST.TOS hd/AUTO/DMTEST.PRG
@@ -52,7 +53,7 @@ jobs:
                  --harddrive hd --fast-boot true --sound 48000 --statusbar false --drive-led false \
                  --cmd-fifo cmdfifo > results/hatari.log 2>&1 &
           HP=$!
-          exec 3>cmdfifo
+          exec 3<>cmdfifo   # read/write: does not wait for Hatari to open its end
           sleep 12
           echo "hatari-shortcut recsound" >&3
           sleep 14
@@ -70,6 +71,7 @@ jobs:
 
       - name: Publish results to the ci-results branch
         if: always()
+        timeout-minutes: 2
         run: |
           git config user.name "github-actions"
           git config user.email "github-actions@users.noreply.github.com"
