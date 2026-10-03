@@ -27,8 +27,11 @@ jobs:
         run: |
           mkdir -p results
           m68k-atari-mint-gcc -mcpu=68030 -c src/main/atari/dspmod_asm.S -o dspmod_asm.o
-          m68k-atari-mint-g++ -O2 -std=gnu++0x -mcpu=68030 -msoft-float -Isrc/main -DPLATFORM_ATARI -Wall \
-              tools/dmtest.cpp src/main/atari/dspmod.cpp dspmod_asm.o -o DMTEST.TOS -lm
+          # compiled for the 030, linked against the 68000 libraries (no FPU), like the game
+          for f in tools/dmtest.cpp src/main/atari/dspmod.cpp; do
+            m68k-atari-mint-g++ -O2 -std=gnu++0x -mcpu=68030 -msoft-float -Isrc/main -DPLATFORM_ATARI -Wall -c $f -o $(basename $f .cpp).o
+          done
+          m68k-atari-mint-g++ -mcpu=68000 dmtest.o dspmod.o dspmod_asm.o -o DMTEST.TOS -lm
           python3 tools/make_test_mod.py TEST.MOD
 
       - name: Get EmuTOS
