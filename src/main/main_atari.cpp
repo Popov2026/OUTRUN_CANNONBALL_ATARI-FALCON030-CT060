@@ -612,7 +612,13 @@ int main(int argc, char* argv[])
         outrun.init();                          // boots the sound driver
         osoundint.has_booted = true;            // (normally set when the attract mode starts)
 #ifdef MUSIC_LOGONLY
+#ifdef MUSIC_LOGNAME   // -DMUSIC_LOGNAME=MAGICAL.LOG (no quotes: they do not survive build_atari.sh)
+#define MUSIC_STR2(x) #x
+#define MUSIC_STR(x) MUSIC_STR2(x)
+        g_ym_log = fopen(MUSIC_STR(MUSIC_LOGNAME), "wb");
+#else
         g_ym_log = fopen("music_log.bin", "wb");
+#endif
         FILE* fy = 0; FILE* fp = 0;
 #else
         FILE* fy = fopen("music_ym.raw", "wb");
