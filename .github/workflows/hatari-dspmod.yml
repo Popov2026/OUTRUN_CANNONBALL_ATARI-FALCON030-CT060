@@ -48,11 +48,12 @@ jobs:
           Xvfb :99 -screen 0 1024x768x24 &
           export DISPLAY=:99 SDL_AUDIODRIVER=dummy
           sleep 2
-          mkfifo cmdfifo
           hatari --confirm-quit false --machine falcon --dsp emu --memsize 14 --tos tos.img \
                  --harddrive hd --fast-boot true --sound 48000 --statusbar false --drive-led false \
                  --cmd-fifo cmdfifo > results/hatari.log 2>&1 &
           HP=$!
+          for i in $(seq 1 20); do [ -p cmdfifo ] && break; sleep 1; done   # Hatari creates it
+          ls -l cmdfifo || true
           exec 3<>cmdfifo   # read/write: does not wait for Hatari to open its end
           sleep 12
           echo "hatari-shortcut recsound" >&3
