@@ -21,52 +21,52 @@ _atari_ikbd_isr:
 ik_next:
 	move.b	0xfffffc00.w,%d0		| ACIA status
 	btst	#0,%d0				| receive data register full?
-	beq.s	ik_done
+	beq	ik_done
 	moveq	#0,%d1
 	move.b	0xfffffc02.w,%d1		| data (also clears the error flags)
 	tst.b	_atari_ikbd_skip
-	beq.s	ik_head
+	beq	ik_head
 	subq.b	#1,_atari_ikbd_skip
 	move.b	_atari_ikbd_joypending,%d0	| a joystick packet's one data byte? 1 = joystick 1, 2 = joystick 0
-	beq.s	ik_next
+	beq	ik_next
 	clr.b	_atari_ikbd_joypending
 	subq.b	#1,%d0
-	beq.s	ik_joy1_data
+	beq	ik_joy1_data
 	move.b	%d1,_atari_joy0
-	bra.s	ik_next
+	bra	ik_next
 ik_joy1_data:
 	move.b	%d1,_atari_joy1
-	bra.s	ik_next
+	bra	ik_next
 ik_head:
 	cmp.w	#0xf6,%d1
-	bcc.s	ik_packet			| 0xf6..0xff: start of a non-keyboard packet
+	bcc	ik_packet			| 0xf6..0xff: start of a non-keyboard packet
 	lea	_atari_scan,%a0
 	move.w	%d1,%d0
 	and.w	#0x7f,%d0
 	tst.b	%d1
-	bmi.s	ik_up
+	bmi	ik_up
 	move.b	#1,(%a0,%d0.w)
-	bra.s	ik_next
+	bra	ik_next
 ik_up:
 	clr.b	(%a0,%d0.w)
-	bra.s	ik_next
+	bra	ik_next
 ik_packet:
 	cmp.w	#0xff,%d1
-	beq.s	ik_joy1_header
+	beq	ik_joy1_header
 	cmp.w	#0xfe,%d1
-	beq.s	ik_joy0_header
+	beq	ik_joy0_header
 	sub.w	#0xf6,%d1
 	lea	ik_skiptab(%pc),%a0
 	move.b	(%a0,%d1.w),_atari_ikbd_skip
-	bra.s	ik_next
+	bra	ik_next
 ik_joy1_header:
 	move.b	#1,_atari_ikbd_skip		| joystick-1 event: always exactly 1 data byte
 	move.b	#1,_atari_ikbd_joypending
-	bra.s	ik_next
+	bra	ik_next
 ik_joy0_header:
 	move.b	#1,_atari_ikbd_skip		| joystick-0 event: always exactly 1 data byte
 	move.b	#2,_atari_ikbd_joypending
-	bra.s	ik_next
+	bra	ik_next
 ik_done:
 	bclr	#6,0xfffffa11.w			| MFP: end of interrupt for the ACIA line
 	movem.l	(%sp)+,%d0-%d1/%a0
