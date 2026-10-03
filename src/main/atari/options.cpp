@@ -9,7 +9,8 @@
 #include <cstring>
 #include "atari/options.hpp"
 
-AtariOptions atari_opt = { 1, 0, 1, 100, 0, 0, 2, 1, 0, 0, 0, 1 };
+AtariOptions atari_opt = { 1, 0, 1, 100, 0, 0, 2, 1, 0, 0, 0, 1,
+                           JOYSRC_UP | JOYSRC_B, JOYSRC_DOWN | JOYSRC_C, JOYSRC_FIRE };
 
 unsigned char g_row_draw[232];
 unsigned char g_row_mask8[232];
@@ -71,6 +72,32 @@ static void set_int(int* dst, const char* text, int lo, int hi)
     *dst = (int)v;
 }
 
+// Stores the joystick sources named in `text` ("up+b", "fire", "none"...) into *dst. Unknown
+// words are ignored; if nothing at all was recognised the default stays.
+static void set_joy(int* dst, const char* text)
+{
+    static const struct { const char* name; int bits; } NAMES[] = {
+        { "up", JOYSRC_UP }, { "down", JOYSRC_DOWN }, { "fire", JOYSRC_FIRE },
+        { "b", JOYSRC_B }, { "c", JOYSRC_C }, { "none", 0 } };
+    int bits = 0;
+    bool any = false;
+    char word[16];
+    while (*text)
+    {
+        int n = 0;
+        while (*text && (*text == ' ' || *text == '\t' || *text == '+' || *text == ',' || *text == '\r' || *text == '\n')) text++;
+        while (*text && *text != ' ' && *text != '\t' && *text != '+' && *text != ',' && *text != '\r' && *text != '\n')
+        {
+            if (n < 15) word[n++] = (char)((*text >= 'A' && *text <= 'Z') ? *text + 32 : *text);
+            text++;
+        }
+        word[n] = 0;
+        if (!n) continue;
+        for (unsigned i = 0; i < sizeof(NAMES) / sizeof(NAMES[0]); i++)
+            if (!strcmp(word, NAMES[i].name)) { bits |= NAMES[i].bits; any = true; }
+    }
+    if (any) *dst = bits;
+}
 
 // Reads outrun.ini (see options.hpp for the keys). Unknown keys are ignored; a missing file
 // leaves every default in place.
@@ -116,6 +143,9 @@ void atari_load_options(const char* filename)
         else if (!strcmp(key, "fm_half"))      set_int(&atari_opt.fm_half,      val, 0, 1);        else if (!strcmp(key, "mod"))          set_int(&atari_opt.mod,          val, 0, 1);
         else if (!strcmp(key, "mod_dsp"))      set_int(&atari_opt.mod_dsp,      val, 0, 1);
         else if (!strcmp(key, "freemint"))     set_int(&atari_opt.freemint,     val, 0, 1);
+        else if (!strcmp(key, "joy_accel"))    set_joy(&atari_opt.joy_accel,    val);
+        else if (!strcmp(key, "joy_brake"))    set_joy(&atari_opt.joy_brake,    val);
+        else if (!strcmp(key, "joy_gear"))     set_joy(&atari_opt.joy_gear,     val);
     }
     fclose(f);
     build_rows(atari_opt.vscale);

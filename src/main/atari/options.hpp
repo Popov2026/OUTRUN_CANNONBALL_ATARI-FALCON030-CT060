@@ -49,6 +49,14 @@
                         0 = look for the 8.3-safe renamed set instead (see README_ATARI.md for the
                         full old->new table); no long-filename support needed at all ("outrun.ini"
                         itself is already 8.3-safe, 6+3 characters).
+      joy_accel  up+b   what accelerates, joy_brake  down+c  what brakes, joy_gear  fire  what
+                        changes gear. Each takes one or more of these, joined with '+':
+                          up, down  the stick (DB9 joysticks and the 15-pin ports)
+                          fire      the fire button of a DB9 joystick, button A of a 15-pin pad
+                          b, c      buttons B and C of a Jaguar pad (15-pin ports)
+                          none      nothing
+                        e.g. joy_accel = fire, joy_brake = down, joy_gear = up. The keyboard
+                        keys (space, left ctrl, left alt/shift) always work as well.
 
     Copyright (c) port authors. See license.txt for more details.
 ***************************************************************************/
@@ -67,7 +75,11 @@ struct AtariOptions
     int mod;
     int mod_dsp;
     int freemint;
+    int joy_accel, joy_brake, joy_gear;   // JOYSRC_* bits
 };
+
+// Joystick sources the joy_* options can name.
+enum { JOYSRC_UP = 1, JOYSRC_DOWN = 2, JOYSRC_FIRE = 4, JOYSRC_B = 8, JOYSRC_C = 16 };
 
 extern AtariOptions atari_opt;
 

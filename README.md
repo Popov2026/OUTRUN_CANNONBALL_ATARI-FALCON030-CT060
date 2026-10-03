@@ -197,6 +197,14 @@ Each option is described in [`outrun.ini.example`](outrun.ini.example).
 | `mod` | 0 / 1 | 0 | Replaces the FM music with `.mod` files (see below) |
 | `mod_dsp` | 0 / 1 | 0 | Plays the `.mod` files on the Falcon's **DSP56001** instead of the CPU |
 | `freemint` | 0 / 1 | 1 | Long ROM names (1) or names renamed to 8.3 (0) |
+| `joy_accel` | `up`, `down`, `fire`, `b`, `c`, `none` (combine with `+`) | `up+b` | What accelerates with a joystick / pad |
+| `joy_brake` | same | `down+c` | What brakes |
+| `joy_gear` | same | `fire` | What changes gear |
+
+Joystick words: `up` / `down` = the stick, `fire` = the button of a DB9 joystick or button A of a
+Jaguar pad, `b` / `c` = Jaguar pad buttons B and C. Example, button to accelerate:
+`joy_accel = fire`, `joy_brake = down`, `joy_gear = up`. Left/right always steer, and the keyboard
+always works too.
 
 The supplied `dist/outrun.ini` sets `sound=1`, `mod=1` and `mod_dsp=1`.
 **Lighter settings for the original Falcon 030:** `scenery=0`, `vscale=67` (or 50), `mod=1`,

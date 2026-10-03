@@ -200,6 +200,14 @@ Chaque option est décrite dans [`outrun.ini.example`](outrun.ini.example) (en a
 | `mod` | 0 / 1 | 0 | Remplace la musique FM par des fichiers `.mod` (voir plus bas) |
 | `mod_dsp` | 0 / 1 | 0 | Fait jouer les `.mod` par le **DSP56001** du Falcon au lieu du CPU |
 | `freemint` | 0 / 1 | 1 | Noms de ROM longs (1) ou renommés en 8.3 (0) |
+| `joy_accel` | `up`, `down`, `fire`, `b`, `c`, `none` (à combiner avec `+`) | `up+b` | Ce qui accélère au joystick / pad |
+| `joy_brake` | idem | `down+c` | Ce qui freine |
+| `joy_gear` | idem | `fire` | Ce qui change de vitesse |
+
+Mots pour le joystick : `up` / `down` = le manche (avant / arrière), `fire` = le bouton d'un joystick
+DB9 ou le bouton A d'un pad Jaguar, `b` / `c` = les boutons B et C d'un pad Jaguar. Exemple, accélérer
+avec le bouton : `joy_accel = fire`, `joy_brake = down`, `joy_gear = up`. Gauche/droite dirigent
+toujours, et le clavier marche toujours en même temps.
 
 Le `dist/outrun.ini` fourni règle `sound=1`, `mod=1` et `mod_dsp=1`.
 **Réglages allégés pour le Falcon 030 d'origine :** `scenery=0`, `vscale=67` (ou 50), `mod=1`,

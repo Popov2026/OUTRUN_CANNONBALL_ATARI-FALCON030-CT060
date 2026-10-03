@@ -9,6 +9,7 @@
 #include <cstdio>
 #include "atari/input.hpp"
 #include "main.hpp"
+#include "atari/options.hpp"
 
 #ifdef __MINT__
 #include <mint/osbind.h>
@@ -228,16 +229,23 @@ void Input::poll()
         if (n < 5) { n++; FILE* lf = fopen("PADS.TXT", "a"); if (lf) { fprintf(lf, "ext_ports=%d pad=%04x\r\n", (int)ext_ports, (unsigned)pad); fclose(lf); } }
     }
 #endif
-    // Joystick 1 (the dedicated DB9 port, not the one shared with the mouse) is ORed on top of the
-    // keyboard so both work at once: stick forward/back = accelerate/brake, fire = shift gear
-    // (GEAR1 - the same single "shift" action as the LALT key). Left/right steer either way.
+    // The joysticks are ORed on top of the keyboard so both work at once. Left/right always
+    // steer; what accelerates, brakes and changes gear (GEAR1 - the same single "shift" action
+    // as the LALT key) comes from outrun.ini's joy_accel / joy_brake / joy_gear (default: stick
+    // forward = accelerate, back = brake, fire / pad A = gear, Jaguar B / C = accelerate / brake).
+    int src = 0;
+    if ((joy1_state & JOY1_UP)   || (pad & PAD_UP))   src |= JOYSRC_UP;
+    if ((joy1_state & JOY1_DOWN) || (pad & PAD_DOWN)) src |= JOYSRC_DOWN;
+    if ((joy1_state & JOY1_FIRE) || (pad & PAD_A))    src |= JOYSRC_FIRE;
+    if (pad & PAD_B)                                  src |= JOYSRC_B;
+    if (pad & PAD_C)                                  src |= JOYSRC_C;
     keys[UP]        = scan_state[SC_UP];
     keys[DOWN]      = scan_state[SC_DOWN];
     keys[LEFT]       = scan_state[SC_LEFT]  || (joy1_state & JOY1_LEFT)  != 0 || (pad & PAD_LEFT)  != 0;
     keys[RIGHT]      = scan_state[SC_RIGHT] || (joy1_state & JOY1_RIGHT) != 0 || (pad & PAD_RIGHT) != 0;
-    keys[ACCEL]      = scan_state[SC_SPACE] || (joy1_state & JOY1_UP)    != 0 || (pad & (PAD_UP | PAD_B))   != 0;
-    keys[BRAKE]      = scan_state[SC_LCTRL] || (joy1_state & JOY1_DOWN)  != 0 || (pad & (PAD_DOWN | PAD_C)) != 0;
-    keys[GEAR1]      = scan_state[SC_LALT]  || (joy1_state & JOY1_FIRE)  != 0 || (pad & PAD_A) != 0;
+    keys[ACCEL]      = scan_state[SC_SPACE] || (src & atari_opt.joy_accel) != 0;
+    keys[BRAKE]      = scan_state[SC_LCTRL] || (src & atari_opt.joy_brake) != 0;
+    keys[GEAR1]      = scan_state[SC_LALT]  || (src & atari_opt.joy_gear)  != 0;
     keys[GEAR2]      = scan_state[SC_LSHIFT];
     keys[START]      = scan_state[SC_ENTER] || (pad & PAD_OPTION) != 0;
     keys[COIN]       = scan_state[SC_ENTER] || (pad & PAD_OPTION) != 0;
