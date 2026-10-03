@@ -1,0 +1,34 @@
+# Copies the m68k-atari-mint cross toolchain packages (Vincent Riviere's PPA, Ubuntu 22.04)
+# to the "toolchain" branch, so a machine that cannot reach the PPA can install them from git.
+name: Toolchain mirror
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  mirror:
+    runs-on: ubuntu-22.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Download the packages
+        run: |
+          sudo add-apt-repository -y ppa:vriviere/ppa
+          sudo apt-get update
+          mkdir -p /tmp/debs && cd /tmp/debs
+          apt-get download binutils-m68k-atari-mint gcc-m68k-atari-mint mintlib-m68k-atari-mint \
+                           pml-m68k-atari-mint gemlib-m68k-atari-mint mintbin-m68k-atari-mint cross-mint-essential
+          ls -l
+      - name: Publish to the toolchain branch
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@users.noreply.github.com"
+          git checkout --orphan toolchain
+          git rm -rf -q . || true
+          rm -rf ./* || true
+          cp /tmp/debs/*.deb .
+          git add -A
+          git commit -q -m "m68k-atari-mint toolchain packages (Ubuntu 22.04, ppa:vriviere/ppa)"
+          git push -f origin toolchain
