@@ -14,6 +14,7 @@
 #include "engine/audio/osoundint.hpp"
 #ifdef PLATFORM_ATARI
 #include "atari/options.hpp"
+void atari_fm_restart();   // atari/audio.cpp
 #endif
 
 OSoundInt osoundint;
@@ -46,6 +47,11 @@ void OSoundInt::init()
     ym->init(atari_opt.fm_half && !atari_opt.fm_dsp ? config.sound.rate / 2 : config.sound.rate, config.fps);
 #else
     ym->init(config.sound.rate, config.fps);
+#endif
+#ifdef PLATFORM_ATARI
+    // FM on the DSP (atari/fmdsp.hpp): (re)started from the chip's reset state, before the
+    // sound driver writes to the chip, so that both are in step from the first write.
+    atari_fm_restart();
 #endif
 
     reset();

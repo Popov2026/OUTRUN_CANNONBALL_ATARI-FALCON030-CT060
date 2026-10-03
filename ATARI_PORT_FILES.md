@@ -90,7 +90,7 @@ were touched for the port.
 | `src/main/hwvideo/hwsprites.cpp` | Calls the assembler sprite routines (`sprite_asm030.S`). |
 | `src/main/hwvideo/hwtiles.cpp` | Calls `atari_tile8` (Falcon only) instead of the generic C++ renderer. |
 | `src/main/hwaudio/ym2151.cpp` | `ym2151_write_hook`, called at the end of `write_reg()` (FM on the DSP), and accessors for the tables and envelope timing the DSP program needs. |
-| `src/main/engine/audio/osoundint.cpp` | The FM chip runs at half the mixing rate with `fm_half=1`, unless `fm_dsp=1`. |
+| `src/main/engine/audio/osoundint.cpp` | The FM chip runs at half the mixing rate with `fm_half=1`, unless `fm_dsp=1`. `init()` restarts the DSP FM program right after the chip's reset (`atari_fm_restart()`), so both start from the same state before the sound driver's first write. |
 | `src/main/hwaudio/segapcm.cpp` | Calls `atari_pcm_channel` instead of the generic C++ loop for each PCM channel. Also contains the `-DPERF_PRINT -DPCM_MEASURE_FILE` per-channel cost measurement (written to `PCMLOG.TXT`, not to the console — see the methodology note below). |
 | `src/main/engine/omusic.cpp` | `play_music()`: in a `-DMOD_MUSIC` build, starts the `.mod` player instead of the YM2151 command for the 3 selectable tracks (not Last Wave, which is triggered elsewhere). Otherwise unchanged (normal YM2151 command), with the `atari_opt.music` check to turn off the music without touching the sound effects. |
 | `src/main/engine/ostats.cpp` | `OStats::init()`: `-DFORCE_CREDIT_TEST` test aid (credit=1 at boot, never in a normal build) — used because synthetic key injection in Hatari never proved reliable for automatically validating a screen that needs a credit. |

@@ -20,6 +20,12 @@
     step late, so audio.cpp delays the PCM sound by one step as well, to keep
     the music's drums with its melody.
 
+    The program is (re)started when the game resets the sound chips
+    (OSoundInt::init(), via atari_fm_restart() in audio.cpp), so that the
+    DSP and the 68k's chip start from the same state; from then on the DSP's
+    output is the same as the 68k's emulation, step for step (checked with
+    -DFMDSP_VERIFY, which has the 68k synthesise the FM too and compares).
+
     The DSP is shared with the DSP .mod players (mod_dsp = 1 or 2): those call
     stop() before they take it, and audio.cpp starts the FM program again once
     the DSP is free (the FM sound is computed by the 68k in between).

@@ -157,8 +157,13 @@ void Audio::tick()
     osoundint.pcm->stream_update();
     uint32_t a1 = PERF_NOW();
     const bool fm_on_dsp = use_fmdsp();
+#ifdef FMDSP_VERIFY
+    // Test aid: the 68k synthesises the FM as well, and the DSP's output is compared with it.
+    osoundint.ym->stream_update();
+#else
     if (fm_on_dsp) osoundint.ym->skip_frame();   // timers only: the DSP makes the sound
     else           osoundint.ym->stream_update();
+#endif
     uint32_t a2 = PERF_NOW();
 
     int16_t* pcm_buffer = osoundint.pcm->get_buffer();
@@ -175,6 +180,31 @@ void Audio::tick()
     if (fm_on_dsp)
     {
         const int16_t* fm = fmdsp.step(frames);
+#ifdef FMDSP_VERIFY
+        {
+            static int16_t ref[DMA_BUFFER_SAMPLES * 2];
+            static bool have_ref = false;
+            static uint32_t steps = 0, bad = 0, exact = 0;
+            if (have_ref)
+            {
+                uint32_t d = 0;
+                for (uint32_t i = 0; i < frames * 2; i++) if ((fm ? fm[i] : 0) != ref[i]) d++;
+                if (d) bad++; else exact++;
+                if (d && bad <= 200)
+                {
+                    FILE* f = fopen("VERIFY.TXT", "a");
+                    if (f) { fprintf(f, "step %lu: %lu samples differ\r\n", (unsigned long)steps, (unsigned long)d); fclose(f); }
+                }
+            }
+            if (++steps % 300 == 0)
+            {
+                FILE* f = fopen("VERIFY.TXT", "a");
+                if (f) { fprintf(f, "%lu steps: %lu exact, %lu differ\r\n", (unsigned long)steps, (unsigned long)exact, (unsigned long)bad); fclose(f); }
+            }
+            std::memcpy(ref, osoundint.ym->get_buffer(), frames * 4);
+            have_ref = true;
+        }
+#endif
         static int16_t pcm_now[DMA_BUFFER_SAMPLES * 2];
         std::memcpy(pcm_now, pcm_late, frames * 4);
         std::memcpy(pcm_late, pcm_buffer, frames * 4);
@@ -274,6 +304,7 @@ void Audio::tick()
     // Test aid: appends what this step hands to the DMA (signed 8-bit, L,R interleaved, at the
     // mixing rate) to AUDIO.RAW, so the sound can be listened to outside the emulator.
     { FILE* df = fopen("AUDIO.RAW", "ab"); if (df) { fwrite(fill, 1, frames * 2, df); fclose(df); } }
+    { FILE* df = fopen("FM.RAW", "ab"); if (df) { fwrite(ym_buffer, 2, frames * 2, df); fclose(df); } }   // the FM part alone (16-bit)
 #endif
     uint32_t a3 = PERF_NOW();
     PERF_PRINTF("AUDIO samples=%lu pcm=%lu ym=%lu mix=%lu (5ms)\r\n", (unsigned long)samples, (unsigned long)(a1-a0), (unsigned long)(a2-a1), (unsigned long)(a3-a2));
@@ -323,6 +354,15 @@ void Audio::tick_muted()
     osoundint.pcm->stream_update();   // sample-end flags are read by the game
     osoundint.ym->skip_frame();
     if (fmdsp.active()) fmdsp.step(osoundint.pcm->buffer_size / 2);   // the DSP's FM chip keeps up
+}
+
+// From OSoundInt::init(), right after the FM chip was reset: the DSP program is started again
+// from the same reset state (fmdsp.hpp), unless the DSP is busy with a .mod.
+void atari_fm_restart()
+{
+    if (!atari_opt.fm_dsp || dsp_replay.active() || dspmod.active()) return;
+    fmdsp.stop();
+    fmdsp.start();
 }
 
 // True when the FM sound of this step is to be computed by the DSP (fmdsp.hpp): asked for in
