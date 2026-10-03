@@ -141,7 +141,7 @@ void atari_load_options(const char* filename)
         else if (!strcmp(key, "sound"))        set_int(&atari_opt.sound,        val, 0, 2);
         else if (!strcmp(key, "music"))        set_int(&atari_opt.music,        val, 0, 1);
         else if (!strcmp(key, "fm_half"))      set_int(&atari_opt.fm_half,      val, 0, 1);        else if (!strcmp(key, "mod"))          set_int(&atari_opt.mod,          val, 0, 1);
-        else if (!strcmp(key, "mod_dsp"))      set_int(&atari_opt.mod_dsp,      val, 0, 1);
+        else if (!strcmp(key, "mod_dsp"))      set_int(&atari_opt.mod_dsp,      val, 0, 2);
         else if (!strcmp(key, "freemint"))     set_int(&atari_opt.freemint,     val, 0, 1);
         else if (!strcmp(key, "joy_accel"))    set_joy(&atari_opt.joy_accel,    val);
         else if (!strcmp(key, "joy_brake"))    set_joy(&atari_opt.joy_brake,    val);

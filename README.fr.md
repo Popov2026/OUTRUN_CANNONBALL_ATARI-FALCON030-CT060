@@ -198,7 +198,7 @@ Chaque option est décrite dans [`outrun.ini.example`](outrun.ini.example) (en a
 | `music` | 0 / 1 | 1 | Coupe la musique sans toucher aux bruitages |
 | `fm_half` | 0 / 1 | 0 | Puce FM émulée à mi-fréquence : moins coûteux, mais son plus terne |
 | `mod` | 0 / 1 | 0 | Remplace la musique FM par des fichiers `.mod` (voir plus bas) |
-| `mod_dsp` | 0 / 1 | 0 | Fait jouer les `.mod` par le **DSP56001** du Falcon au lieu du CPU |
+| `mod_dsp` | 0 / 1 / 2 | 0 | Fait jouer les `.mod` par le **DSP56001** du Falcon au lieu du CPU : 1 = replay SoundTracker (Simplet / ABSTRACT), 2 = DSPMOD 3.4 (bITmASTER of TCE) |
 | `freemint` | 0 / 1 | 1 | Noms de ROM longs (1) ou renommés en 8.3 (0) |
 | `joy_accel` | `up`, `down`, `fire`, `b`, `c`, `none` (à combiner avec `+`) | `up+b` | Ce qui accélère au joystick / pad |
 | `joy_brake` | idem | `down+c` | Ce qui freine |

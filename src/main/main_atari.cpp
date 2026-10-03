@@ -50,6 +50,7 @@ extern "C" long __stksize = 262144L;
 #include "atari/input.hpp"
 #include "atari/options.hpp"
 #include "atari/dsp_replay.hpp"
+#include "atari/dspmod.hpp"
 
 void atari_redraw_desktop();   // atari/gemredraw.cpp
 
@@ -92,6 +93,7 @@ static void quit_cleanup()
 {
     audio.stop_audio();
     dsp_replay.stop();      // hands Timer A, the sound matrix and the DSP back (no-op unless mod_dsp started it)
+    dspmod.shutdown();      // same for DSPMOD (mod_dsp = 2)
     input.shutdown();   // give the keyboard interrupt vector back (TOS does not reclaim vectors)
     // Put the display back the way it was before the game took over (see atari/video_falcon.cpp's
     // Render::disable()), so EmuTOS's own desktop is actually visible again afterwards - called

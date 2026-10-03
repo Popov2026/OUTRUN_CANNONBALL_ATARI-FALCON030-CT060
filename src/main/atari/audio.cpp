@@ -14,6 +14,7 @@
 #include "atari/audio.hpp"
 #include "atari/modplayer.hpp"
 #include "atari/dsp_replay.hpp"
+#include "atari/dspmod.hpp"
 #include "atari/options.hpp"
 #include "frontend/config.hpp"
 #include "engine/audio/osoundint.hpp"
@@ -156,7 +157,7 @@ void Audio::tick()
 
     // DSP replay running (mod_dsp=1, see dsp_replay.hpp): the DAC listens to the DSP, not to
     // the DMA, so the FM + PCM mix is queued there and played as an extra pair of voices.
-    if (dsp_replay.active())
+    if (dsp_replay.active() || dspmod.active())
     {
         static int8_t fx[DMA_BUFFER_SAMPLES * 2];
         for (uint32_t i = 0; i < frames * 2; i++)
@@ -166,7 +167,8 @@ void Audio::tick()
             else if (mix < SHRT_MIN) mix = SHRT_MIN;
             fx[i] = (int8_t)(mix >> 8);
         }
-        dsp_replay.push_fx(fx, frames);
+        if (dspmod.active()) dspmod.push_fx(fx, frames);
+        else                 dsp_replay.push_fx(fx, frames);
 #ifdef DSPFX_LOG
         // Test aid: state of the effects queue every 50 steps, in DSPFX.TXT.
         {
@@ -259,7 +261,7 @@ bool Audio::dma_busy()
 // main loop's waiting loop, so the next buffer starts within microseconds of the last one ending.
 void Audio::service()
 {
-    if (!sound_enabled || queue_len == 0 || dsp_replay.active() || dma_busy()) return;
+    if (!sound_enabled || queue_len == 0 || dsp_replay.active() || dspmod.active() || dma_busy()) return;
     playing = queue[0];
     queue[0] = queue[1];
     queue_len--;

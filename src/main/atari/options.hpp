@@ -36,7 +36,11 @@
                         Wave - the user supplies these files; none are included). A missing file
                         falls back to the normal FM music for that track. 0 = never touch the .mod
                         player (default; needs the "music" key above set to 1 too).
-      mod_dsp        0   1 = play the .mod files (see "mod" above) on the DSP56001 instead of mixing
+      mod_dsp        0   2 = play the .mod files with DSPMOD 3.4 (bITmASTER of TCE, atari/dspmod.hpp):
+                        its own 68k + DSP replay; the game's FM + PCM sound goes through two of
+                        its fx voices. 4-voice modules ("M.K.", "M!K!", "FLT4"); others fall back
+                        to CPU mixing.
+                         1 = play the .mod files (see "mod" above) on the DSP56001 instead of mixing
                         them on the CPU: the DSP side is the SoundTracker replay by Simplet /
                         ABSTRACT (from dhs.nu), fed from a Timer A interrupt - see
                         atari/dsp_replay.hpp. The music is mixed at 49170 Hz in stereo and keeps

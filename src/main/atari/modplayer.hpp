@@ -122,6 +122,7 @@ private:
 
     Channel channels[MAX_CHANNELS];
     bool    song_loaded;
+    uint8_t* dspmod_raw;   // mod_dsp = 2: the whole file, played by DSPMOD (atari/dspmod.hpp)
     bool    dsp_mode;   // the song is played by the DSP replay (atari_opt.mod_dsp): its timer
                           // interrupt drives the tracker, mix() does nothing
     volatile bool dsp_ready;   // false while the song is being loaded or freed: the interrupt

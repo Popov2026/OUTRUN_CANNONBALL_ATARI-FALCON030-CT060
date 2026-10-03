@@ -11,6 +11,7 @@
 #include "atari/modplayer.hpp"
 #include "atari/options.hpp"
 #include "atari/dsp_replay.hpp"
+#include "atari/dspmod.hpp"
 
 ModPlayer modplayer;
 
@@ -36,6 +37,7 @@ ModPlayer::ModPlayer()
     dsp_mode = false;
     dsp_ready = false;
     dsp_tempo_acc = 0;
+    dspmod_raw = 0;
     num_samples = 0;
     for (int i = 0; i < MAX_SAMPLES; i++) { samples[i].data = 0; samples[i].data8 = 0; samples[i].length = 0; }
 }
@@ -50,6 +52,12 @@ ModPlayer::~ModPlayer()
 // reading the sample data before it is freed.
 void ModPlayer::unload()
 {
+    if (dspmod_raw)
+    {
+        dspmod.stop_song();   // DSPMOD stops reading the module before it is freed
+        delete[] dspmod_raw;
+        dspmod_raw = 0;
+    }
     dsp_ready = false;   // from here on the DSP replay's interrupt sends silence for the 4 channels
     for (int i = 0; i < MAX_SAMPLES; i++)
     {
@@ -75,7 +83,13 @@ bool ModPlayer::load(const char* filename, uint32_t mix_rate)
     unload();
 
     FILE* f = fopen(filename, "rb");
-    if (!f) return false;
+    if (!f)
+    {
+        // No .mod for this track: FM music through the normal DMA path, so DSPMOD (mod_dsp = 2)
+        // must give the DAC back.
+        if (atari_opt.mod_dsp == 2) dspmod.shutdown();
+        return false;
+    }
 
     // Read the whole file into one buffer: .mod files used as test content
     // here are a few hundred KB at most, and this keeps the offset maths
@@ -89,6 +103,19 @@ bool ModPlayer::load(const char* filename, uint32_t mix_rate)
     size_t got = fread(raw, 1, fsize, f);
     fclose(f);
     if ((long)got != fsize) { delete[] raw; return false; }
+
+    // mod_dsp = 2: DSPMOD plays the file as it is (it interprets the patterns itself and streams
+    // the samples to its DSP program). Modules it does not take fall back to the parser below.
+    if (atari_opt.mod_dsp == 2 && fsize >= 1084)
+    {
+        if (dspmod.play(raw))
+        {
+            dspmod_raw = raw;
+            song_loaded = true;
+            return true;
+        }
+        dspmod.shutdown();
+    }
 
     // Detect the header variant via the magic id at offset 1080 (present
     // only in the newer 31-sample layout).
@@ -193,7 +220,7 @@ bool ModPlayer::load(const char* filename, uint32_t mix_rate)
     // silence), so the interrupt can hand the DSP one frame's worth in a single run.
     dsp_mode = false;
     dsp_tempo_acc = 0;
-    if (atari_opt.mod_dsp && num_channels <= 4 && dsp_replay.start())
+    if (atari_opt.mod_dsp == 1 && num_channels <= 4 && dsp_replay.start())
     {
         for (int i = 0; i < num_samples; i++)
         {
@@ -503,7 +530,7 @@ void ModPlayer::process_tick()
 void ModPlayer::mix(int16_t* dst, uint32_t frames)
 {
     if (!song_loaded || frames == 0) return;
-    if (dsp_mode) return;   // played by the DSP replay, driven from its own timer interrupt
+    if (dsp_mode || dspmod_raw) return;   // played by the DSP replay, driven from its own timer interrupt
 
     for (uint32_t i = 0; i < frames; i++)
     {
