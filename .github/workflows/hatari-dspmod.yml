@@ -33,7 +33,8 @@ jobs:
 
       - name: Get EmuTOS
         run: |
-          curl -fL -o emutos.zip https://github.com/emutos/emutos/releases/download/v1.3/emutos-512k-1.3.zip
+          curl -fL -o emutos.zip https://github.com/emutos/emutos/releases/download/v1.3/emutos-512k-1.3.zip \
+            || curl -fL -o emutos.zip "https://sourceforge.net/projects/emutos/files/emutos/1.3/emutos-512k-1.3.zip/download"
           unzip -o emutos.zip
           cp $(find . -name 'etos512us.img' | head -1) tos.img
           mkdir -p results && cp tos.img results/etos512us.img   # EmuTOS (GPL), for running Hatari elsewhere
