@@ -12,7 +12,7 @@
 
     Build: g++ -O2 -DPLATFORM_ATARI -Isrc/main -Itools/fmdsp tools/fmdsp/fmmodel.cpp \
                src/main/hwaudio/ym2151.cpp src/main/hwaudio/soundchip.cpp -o fmmodel
-    Use:   fmmodel MAGICAL.LOG [model.wav]
+    Use:   fmmodel MAGICAL.LOG [model.raw [ticks]]   (model.raw: 16-bit little-endian L,R)
 
     Copyright (c) port authors. See license.txt for more details.
 ***************************************************************************/
@@ -51,14 +51,15 @@ static bool same(const OpSnap& a, const OpSnap& b) { return !memcmp(&a, &b, size
 
 int main(int argc, char** argv)
 {
-    if (argc < 2) { fprintf(stderr, "usage: fmmodel LOG [model.wav]\n"); return 1; }
+    if (argc < 2) { fprintf(stderr, "usage: fmmodel LOG [model.raw [ticks]]\n"); return 1; }
     FILE* f = fopen(argv[1], "rb");
     if (!f) { perror(argv[1]); return 1; }
     std::vector<unsigned char> log;
     for (int c; (c = fgetc(f)) != EOF; ) log.push_back((unsigned char)c);
     fclose(f);
     const int RATE = 12517, FPS = 30;
-    const int ticks = ((log[log.size() - 4] << 8) | log[log.size() - 3]) + 1;
+    int ticks = ((log[log.size() - 4] << 8) | log[log.size() - 3]) + 1;
+    if (argc > 3 && atoi(argv[3]) > 0 && atoi(argv[3]) < ticks) ticks = atoi(argv[3]);   // only the first N game steps
 
     // 1. reference
     YM2151 ref(0.5f, 4000000);
@@ -129,6 +130,27 @@ int main(int argc, char** argv)
             if (r == 8) { eng.key(v); n_key++; put(0x030000 | v); }
             pos += 4;
         }
+#ifdef ACTSTAT
+        {   // statistics: active channels / non-off operators per step
+            static long sum_ch = 0, sum_op = 0, steps = 0, max_ch = 0;
+            int ac = 0, ao = 0;
+            for (int c = 0; c < 8; c++)
+            {
+                bool on = false;
+                for (int k = 0; k < 4; k++)
+                {
+                    const fm::Op& o = eng.op[c * 4 + k];
+                    if (o.state != fm::EG_OFF) ao++;
+                    if (o.state == fm::EG_OFF) continue;
+                    if (o.state == fm::EG_REL && (uint32_t)(o.tl + o.volume) >= fm::ENV_QUIET) continue;
+                    on = true;
+                }
+                ac += on;
+            }
+            sum_ch += ac; sum_op += ao; steps++; if (ac > max_ch) max_ch = ac;
+            if (t == ticks - 1) printf("active channels avg %.2f max %ld, non-off operators avg %.2f\n", sum_ch / (double)steps, max_ch, sum_op / (double)steps);
+        }
+#endif
         put(0x040000 | frames);   // render one game step
         eng.render(buf.data(), frames, 128);
         out_eng.insert(out_eng.end(), buf.begin(), buf.end());
