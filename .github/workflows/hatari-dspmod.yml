@@ -45,6 +45,8 @@ jobs:
           mkdir -p results hd/AUTO
           cp DMTEST.TOS hd/AUTO/DMTEST.PRG
           cp TEST.MOD hd/
+          cp TEST.MOD hd/AUTO/      # a program started from AUTO\ may look for its files there
+          cp DMTEST.TOS TEST.MOD results/
           Xvfb :99 -screen 0 1024x768x24 &
           export DISPLAY=:99 SDL_AUDIODRIVER=dummy
           sleep 2
@@ -65,6 +67,7 @@ jobs:
           kill $HP || true
           ls -la . hd results
           cp hd/DMTEST.TXT results/ 2>/dev/null || true
+          cp hd/AUTO/DMTEST.TXT results/DMTEST_AUTO.TXT 2>/dev/null || true
           WAV=$(ls -t *.wav 2>/dev/null | head -1)
           [ -n "$WAV" ] && cp "$WAV" results/dmtest.wav
           python3 tools/analyse_wav.py results/dmtest.wav > results/analysis.txt 2>&1; echo "exit=$?" >> results/analysis.txt
