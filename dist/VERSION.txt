@@ -6,3 +6,4 @@ CB060.TOS - Falcon + CT60 / CT63 (68060): full speed
 outrun.ini - mod=1, mod_dsp=1 (.mod music played by the DSP; set mod_dsp=0 for CPU mixing,
              mod=0 for the original FM music, computed by the DSP with fm_dsp=1)
 PADTEST.TOS - joystick test: shows live what each joystick socket returns
+ROMNAME.TOS - renames the ROMs to short 8.3 names (S, plain TOS) or long names (L, FreeMiNT)

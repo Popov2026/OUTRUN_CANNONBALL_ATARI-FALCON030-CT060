@@ -25,7 +25,7 @@ Portage du moteur **[Cannonball](https://github.com/djyt/cannonball)** de Chris 
 ### Téléchargement
 
 Le paquet prêt à l'emploi se trouve sur la page **[Releases](../../releases)** :
-`cannonball_falcon_v0.30-beta.zip` contient `CB030.TOS`, `CB060.TOS`, `PADTEST.TOS`, `outrun.ini`, le dossier
+`cannonball_falcon_v0.30-beta.zip` contient `CB030.TOS`, `CB060.TOS`, `PADTEST.TOS`, `ROMNAME.TOS`, `outrun.ini`, le dossier
 `res/`, ainsi que des dossiers `roms/` et `Music/` vides accompagnés de leurs instructions.
 Décompresse-le, ajoute tes ROMs (et éventuellement tes `.mod`), puis lance le jeu. Aucune ROM
 ni aucune musique `.mod` n'est incluse.

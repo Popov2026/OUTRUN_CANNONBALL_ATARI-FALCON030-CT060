@@ -16,6 +16,8 @@ optionally your `.mod` files in `Music/` (see the README).
 - **Joystick fixed on real CT60 hardware**, and **configurable**: `joy_accel`, `joy_brake`, `joy_gear` in
   `outrun.ini`.
 - `PADTEST.TOS`: joystick test showing what each socket returns.
+- `ROMNAME.TOS`: renames your ROM files to the short 8.3 names (plain TOS) or to the long names (FreeMiNT),
+  recognising each ROM by its contents, and sets `freemint` in `outrun.ini` to match.
 
 ### `.mod` music: the `mod_dsp` setting
 Only with `mod = 1` and your own `TRACK1.MOD` … `TRACK4.MOD` in `Music/` (4-channel ProTracker modules).
@@ -51,6 +53,8 @@ et éventuellement tes `.mod` dans `Music/` (voir le README).
   modules de plus de 64 patterns, c'est le replay DSP de Simplet qui est utilisé (DSPMOD n'est pas fiable sur 68060).
 - **Joystick corrigé sur vrai CT60**, et **configurable** : `joy_accel`, `joy_brake`, `joy_gear` dans `outrun.ini`.
 - `PADTEST.TOS` : test du joystick qui affiche ce que renvoie chaque prise.
+- `ROMNAME.TOS` : renomme tes fichiers de ROM en noms courts 8.3 (TOS seul) ou en noms longs (FreeMiNT), en
+  reconnaissant chaque ROM par son contenu, et règle `freemint` dans `outrun.ini` en conséquence.
 
 ### Musique `.mod` : le réglage `mod_dsp`
 Seulement avec `mod = 1` et tes propres `TRACK1.MOD` … `TRACK4.MOD` dans `Music/` (modules ProTracker 4 voies).

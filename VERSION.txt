@@ -35,6 +35,10 @@ Changes since v0.27:
   - Configurable joystick: joy_accel, joy_brake, joy_gear in outrun.ini
     (up, down, fire, b, c, none, combined with '+').
   - PADTEST.TOS: shows live what each joystick socket returns.
+  Tools
+  - ROMNAME.TOS: renames the ROM files to short 8.3 names (plain TOS) or to
+    long names (FreeMiNT), recognising each ROM by its CRC32 whatever its
+    current name, and sets freemint in outrun.ini to match.
 
 Layout of this delivery:
   cannonball_src/      - full source tree, no build artifacts, no ROM data.
