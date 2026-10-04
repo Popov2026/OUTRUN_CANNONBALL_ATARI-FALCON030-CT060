@@ -1,0 +1,26 @@
+# Turns an existing pre-release into the normal, "Latest" release (same package, nothing rebuilt).
+# Run by hand from the Actions tab once a test version has been checked.
+name: Promote release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Tag of the release to make the latest (e.g. v0.30-beta)'
+        required: true
+        default: 'v0.30-beta'
+
+permissions:
+  contents: write
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Mark as latest release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          gh release edit "$VERSION" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest
+          gh release view "$VERSION" --repo "$GITHUB_REPOSITORY" --json tagName,isPrerelease,name
