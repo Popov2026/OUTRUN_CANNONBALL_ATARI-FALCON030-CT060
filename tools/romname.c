@@ -7,7 +7,8 @@
     Put it next to CB030.TOS / CB060.TOS and run it from there. Each ROM is
     recognised by its contents (CRC32), whatever its name is now - even the
     truncated alias plain TOS shows for a long name copied from a PC
-    (EPR-10~1.133). Long names can only be created under FreeMiNT.
+    (EPR-10~1.133). Real long names need FreeMiNT: plain TOS stores them cut to
+    8.3 (EPR-1038.133), which the game finds the same way with freemint = 1.
 
     Build: m68k-atari-mint-gcc -O2 -mcpu=68000 tools/romname.c -o ROMNAME.TOS
 
@@ -96,6 +97,21 @@ static int same_name(const char* a, const char* b)
     return *a == *b;
 }
 
+/* What plain TOS makes of a name: base cut to 8 characters, extension to 3, capitals. */
+static void tos_form(const char* name, char* out)
+{
+    const char* dot = strrchr(name, '.');
+    int nb = dot ? (int)(dot - name) : (int)strlen(name);
+    int o = 0;
+    for (int i = 0; i < nb && i < 8; i++) out[o++] = (char)toupper((unsigned char)name[i]);
+    if (dot)
+    {
+        out[o++] = '.';
+        for (int i = 1; dot[i] && i <= 3; i++) out[o++] = (char)toupper((unsigned char)dot[i]);
+    }
+    out[o] = 0;
+}
+
 static const char* ext_of(const char* name)
 {
     const char* d = strrchr(name, '.');
@@ -178,10 +194,12 @@ int main(void)
     const int to_long = k == 'L';
     if (to_long && !have_mint)
     {
-        printf("\r\nLong names need FreeMiNT. / Les noms longs demandent FreeMiNT.\r\n");
-        printf("\r\nPress a key / Appuie sur une touche\r\n");
-        wait_key();
-        return 1;
+        /* Plain TOS cuts every name to 8.3, when creating a file and when opening one: the ROMs
+           are stored as EPR-1038.133 ..., which the game (freemint = 1) finds the same way. */
+        printf("\r\nNo FreeMiNT: TOS keeps 8.3 names (EPR-1038.133...), which the game\r\n");
+        printf("finds with freemint = 1. Real long names need FreeMiNT.\r\n");
+        printf("Sans FreeMiNT : TOS garde des noms 8.3 (EPR-1038.133...), que le jeu\r\n");
+        printf("trouve avec freemint = 1. Les vrais noms longs demandent FreeMiNT.\r\n\r\n");
     }
 
     crc_init();
@@ -226,7 +244,13 @@ int main(void)
         found[r] = 1;
         char want[20];
         if (to_long) strcpy(want, ROMS[r].name); else short_name(ROMS[r].name, want);
-        if (strcmp(names[i], want) == 0 || (!have_mint && same_name(names[i], want))) { ok++; continue; }
+        char cut[20];
+        tos_form(want, cut);
+        if (strcmp(names[i], want) == 0 || (!have_mint && (same_name(names[i], want) || (to_long && same_name(names[i], cut)))))
+        {
+            ok++;
+            continue;
+        }
         sprintf(target, "roms\\%s", want);
         if (same_name(names[i], want))
         {

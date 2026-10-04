@@ -135,8 +135,8 @@ du GEMDOS. Tu as deux possibilités :
   [`README_ATARI.md`](README_ATARI.md).
 
 **`ROMNAME.TOS`** fait le renommage pour toi : mets-le à côté de `CB030.TOS` / `CB060.TOS`, lance-le
-et appuie sur **S** pour les noms courts 8.3 (TOS seul) ou sur **L** pour les noms longs (FreeMiNT
-uniquement). Il reconnaît chaque ROM par son contenu (CRC32), quel que soit son nom actuel - même
+et appuie sur **S** pour les noms courts 8.3 (TOS seul) ou sur **L** pour les noms longs (les vrais noms longs demandent FreeMiNT ; TOS seul les garde coupés en 8.3,
+par exemple `EPR-1038.133`, que le jeu retrouve de la même façon avec `freemint = 1`). Il reconnaît chaque ROM par son contenu (CRC32), quel que soit son nom actuel - même
 l'alias tronqué que TOS montre pour un nom long copié depuis un PC - et règle `freemint` dans
 `outrun.ini` en conséquence.
 

@@ -132,7 +132,7 @@ the GEMDOS 8.3 limit. You have two choices:
   [`README_ATARI.md`](README_ATARI.md).
 
 **`ROMNAME.TOS`** does the renaming for you: put it next to `CB030.TOS` / `CB060.TOS`, run it and
-press **S** for the short 8.3 names (plain TOS) or **L** for the long names (FreeMiNT only). It
+press **S** for the short 8.3 names (plain TOS) or **L** for the long names (real long names need FreeMiNT; plain TOS keeps them cut to 8.3, e.g. `EPR-1038.133`, which the game finds the same way with `freemint = 1`). It
 recognises each ROM by its contents (CRC32), whatever its current name - even the truncated alias
 plain TOS shows for a long name copied from a PC - and sets `freemint` in `outrun.ini` to match.
 
