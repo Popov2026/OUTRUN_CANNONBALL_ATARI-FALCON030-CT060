@@ -9,6 +9,9 @@
 #include <cstdio>
 #include <cstring>
 #include "atari/modplayer.hpp"
+#ifdef __MINT__
+#include <mint/cookie.h>
+#endif
 #include "atari/options.hpp"
 #include "atari/dsp_replay.hpp"
 #include "atari/dspmod.hpp"
@@ -124,14 +127,23 @@ bool ModPlayer::load_now(const char* filename, uint32_t mix_rate)
 
     // mod_dsp = 2: DSPMOD plays the file as it is (it interprets the patterns itself and streams
     // the samples to its DSP program). Modules it does not take fall back to the parser below.
-    // DSPMOD hangs on modules with more than 64 patterns ("M!K!", e.g. Passing Breeze and Splash
-    // Wave as covered by Reassembler): those are played by the Simplet DSP replay instead.
+    // mod_dsp = 2 plays with the Simplet DSP replay instead of DSPMOD:
+    // - modules with more than 64 patterns ("M!K!", e.g. Passing Breeze and Splash Wave as
+    //   covered by Reassembler): DSPMOD hangs on them;
+    // - with a 68040/68060: DSPMOD 3.4 was written for the 68030. It writes to the DSP host port
+    //   without waiting for it to be ready (a few nops between words), so a faster processor
+    //   loses words and the DSP waits forever (the game froze in Hatari's 68060), and it uses a
+    //   64-bit mulu.l, which a 68060 only has through a slow trap (the game ran slower).
     bool simplet = false;
     if (atari_opt.mod_dsp == 2 && fsize >= 1084)
     {
         int last = 0;
         for (int i = 0; i < 128; i++) if (raw[952 + i] > last) last = raw[952 + i];
-        simplet = last >= 64;
+        long cpu = 0;
+#ifdef __MINT__
+        Getcookie(C__CPU, &cpu);
+#endif
+        simplet = last >= 64 || cpu >= 40;
     }
     if (atari_opt.mod_dsp == 2 && fsize >= 1084 && !simplet)
     {

@@ -282,5 +282,10 @@ void DspReplay::frame()
 }
 
 #ifdef __MINT__
+#ifdef AUDIO_TIMING
+extern uint32_t g_t_replay; uint32_t atari_fine_time();
+extern "C" void dsp_replay_frame() { const uint32_t t = atari_fine_time(); dsp_replay.frame(); g_t_replay += atari_fine_time() - t; }
+#else
 extern "C" void dsp_replay_frame() { dsp_replay.frame(); }
+#endif
 #endif

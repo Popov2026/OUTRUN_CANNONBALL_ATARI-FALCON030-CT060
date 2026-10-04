@@ -397,6 +397,9 @@ static void main_loop()
         const uint32_t p0 = *hz200 * 3;
         video.prepare_frame();
         video.render_frame();
+#ifdef AUDIO_TIMING
+        { extern uint32_t g_pictures; g_pictures++; }
+#endif
         const uint32_t p1 = *hz200 * 3;
         P = (3 * P + (p1 - p0)) / 4;
         renders++;

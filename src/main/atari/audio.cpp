@@ -36,7 +36,8 @@
 
 #ifdef AUDIO_TIMING
 static uint32_t fine_time();
-uint32_t g_t_drv, g_t_pcm, g_t_fm, g_t_mix;   // per 300 steps, 1/38400 s
+uint32_t g_t_drv, g_t_pcm, g_t_fm, g_t_mix, g_t_replay, g_pictures;   // per 300 steps, 1/38400 s
+uint32_t atari_fine_time() { return fine_time(); }
 #define T_MARK(v) const uint32_t v = fine_time()
 #else
 #define T_MARK(v)
@@ -253,10 +254,11 @@ void Audio::tick_now()
         FILE* f = fopen("AUDT.TXT", "a");
         static uint32_t last = 0;
         const uint32_t now = fine_time();
-        if (f) { fprintf(f, "fm_dsp=%d tick avg %lu us max %lu us; 300 steps took %lu ms (10000 = real time); per step: driver %lu pcm %lu fm %lu us\r\n", fmdsp.active() ? 1 : 0,
+        if (f) { fprintf(f, "fm_dsp=%d tick avg %lu us max %lu us; 300 steps took %lu ms (10000 = real time); per step: driver %lu pcm %lu fm %lu us; .mod replay %lu us; pictures %lu\r\n", fmdsp.active() ? 1 : 0,
                          (unsigned long)(sum / n * 26), (unsigned long)(mx * 26), (unsigned long)(last ? (now - last) * 26 / 1000 : 0),
-                         (unsigned long)(g_t_drv / n * 26), (unsigned long)(g_t_pcm / n * 26), (unsigned long)(g_t_fm / n * 26)); fclose(f); }
-        g_t_drv = g_t_pcm = g_t_fm = 0;
+                         (unsigned long)(g_t_drv / n * 26), (unsigned long)(g_t_pcm / n * 26), (unsigned long)(g_t_fm / n * 26),
+                         (unsigned long)(g_t_replay / n * 26), (unsigned long)g_pictures); fclose(f); }
+        g_t_drv = g_t_pcm = g_t_fm = g_t_replay = g_pictures = 0;
         last = now;
         sum = n = mx = 0;
     }
@@ -488,7 +490,7 @@ void Audio::tick_muted()
 // from the same reset state (fmdsp.hpp), unless the DSP is busy with a .mod.
 void atari_fm_restart()
 {
-    if (!atari_opt.fm_dsp || dsp_replay.active() || dspmod.active()) return;
+    if (!atari_opt.fm_dsp || dsp_replay.active() || dspmod.holds_dsp()) return;
     fmdsp.stop();
     fmdsp.start();
 }
@@ -498,7 +500,8 @@ void atari_fm_restart()
 // DSP program if needed (at start-up, or once a DSP .mod replay has given the DSP back).
 bool Audio::use_fmdsp()
 {
-    if (!atari_opt.fm_dsp || dsp_replay.active() || dspmod.active()) return false;
+    // (DSPMOD keeps its program in the DSP between two songs: the DSP is not free then)
+    if (!atari_opt.fm_dsp || dsp_replay.active() || dspmod.holds_dsp()) return false;
     if (osoundint.ym->buffer_size != osoundint.pcm->buffer_size || osoundint.pcm->buffer_size / 2 > FmDsp::MAX_FRAMES)
         return false;
     return fmdsp.start();

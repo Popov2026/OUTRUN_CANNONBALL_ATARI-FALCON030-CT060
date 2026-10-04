@@ -69,6 +69,8 @@ mod          = 0     # 0 = original FM music (default if this line is missing).
 mod_dsp      = 0     # Only matters with mod = 1.
                      # 2 = played by DSPMOD 3.4 (bITmASTER of TCE) on the DSP, the game's sound
                      #     effects going through two of its effect voices. 4-voice modules.
+                     #     Modules with more than 64 patterns, and all modules with a 68040/68060
+                     #     (DSPMOD is not safe on it), are played as with mod_dsp = 1.
                      # 0 = the .mod music is mixed by the processor (default if this line is
                      #     missing).
                      # 1 = it is played by the Falcon's DSP: 49 kHz stereo, steady tempo whatever

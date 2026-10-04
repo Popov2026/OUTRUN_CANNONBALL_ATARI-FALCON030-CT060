@@ -38,6 +38,9 @@ public:
     // Stops everything and gives the sound matrix, the DSP and Timer A back.
     void shutdown();
     bool active() const { return playing; }
+    // DSPMOD is installed (its DSP program, Timer A, the DAC fed by the DSP), playing or not:
+    // nothing else may use the DSP until shutdown().
+    bool holds_dsp() const { return initialised; }
 
     // One game step of the FM + PCM mix: `frames` interleaved L,R signed 8-bit samples at
     // the engine's mix rate. Called from Audio::tick().

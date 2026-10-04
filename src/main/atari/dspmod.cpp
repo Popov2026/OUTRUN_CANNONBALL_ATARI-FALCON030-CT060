@@ -16,7 +16,12 @@ DspMod dspmod;
 
 extern "C" uint32_t dspmod_call(void* entry, uint32_t* regs);   // dspmod_asm.S
 extern "C" void dspmod_isr();
+#ifdef AUDIO_TIMING
+extern uint32_t g_t_replay; uint32_t atari_fine_time();
+extern "C" void dspmod_frame() { const uint32_t t = atari_fine_time(); dspmod.frame(); g_t_replay += atari_fine_time() - t; }
+#else
 extern "C" void dspmod_frame() { dspmod.frame(); }
+#endif
 
 #define REG8(a) (*(volatile unsigned char*)(a))
 
