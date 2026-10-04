@@ -137,6 +137,9 @@ bool DspMod::play(uint8_t* mod, uint32_t rate)
     // DSPMOD knows "M.K.", "FLT4", "CD8 ", "CD81", "FA08". "M!K!" is the same 4-voice format
     // with more than 64 patterns: renamed so DSPMOD takes it.
     if (!memcmp(mod + 1080, "M!K!", 4)) memcpy(mod + 1080, "M.K.", 4);
+    // Byte 951 is the position the song restarts at. Many trackers write 127 there for "none";
+    // DSPMOD takes it as a position, past the end of the song, and hangs (Passing Breeze).
+    if (mod[951] >= mod[950]) mod[951] = 0;
     if (call(DM_MOD_TYPE, 0, 0, 0, 0, mod) != 4) return false;   // 4-voice modules only (2 fx voices needed)
     if (!init_once()) return false;
 

@@ -200,7 +200,7 @@ Chaque option est décrite dans [`outrun.ini.example`](outrun.ini.example) (en a
 | `sound_irq` | 0 / 1 / 2 | 2 | 1 = son produit par une interruption : la musique garde son tempo et n'a pas de trous même quand le jeu tourne plus lentement que le temps réel ; 2 = automatique (activé avec un 68040/68060, désactivé avec un 68030, qui n'a pas le temps pour ça) |
 | `fm_dsp` | 0 / 1 | 1 | La puce FM (YM2151) est calculée par le **DSP56001** du Falcon : même son, au bit près, pour une fraction du temps CPU (voir plus bas) |
 | `mod` | 0 / 1 | 0 | Remplace la musique FM par des fichiers `.mod` (voir plus bas) |
-| `mod_dsp` | 0 / 1 / 2 | 0 | Fait jouer les `.mod` par le **DSP56001** du Falcon au lieu du CPU : 1 = replay SoundTracker (Simplet / ABSTRACT), 2 = DSPMOD 3.4 (bITmASTER of TCE) |
+| `mod_dsp` | 0 / 1 / 2 | 0 | Fait jouer les `.mod` par le **DSP56001** du Falcon au lieu du CPU : 1 = replay SoundTracker (Simplet / ABSTRACT), 2 = DSPMOD 3.4 (bITmASTER of TCE ; les modules de plus de 64 patterns passent au replay Simplet, DSPMOD se bloque dessus) |
 | `freemint` | 0 / 1 | 1 | Noms de ROM longs (1) ou renommés en 8.3 (0) |
 | `joy_accel` | `up`, `down`, `fire`, `b`, `c`, `none` (à combiner avec `+`) | `up+b` | Ce qui accélère au joystick / pad |
 | `joy_brake` | idem | `down+c` | Ce qui freine |

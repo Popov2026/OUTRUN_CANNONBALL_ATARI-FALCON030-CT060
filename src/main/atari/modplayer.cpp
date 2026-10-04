@@ -105,7 +105,7 @@ bool ModPlayer::load_now(const char* filename, uint32_t mix_rate)
     {
         // No .mod for this track: FM music through the normal DMA path, so DSPMOD (mod_dsp = 2)
         // must give the DAC back.
-        if (atari_opt.mod_dsp == 2) dspmod.shutdown();
+        if (atari_opt.mod_dsp == 2) { dspmod.shutdown(); dsp_replay.stop(); }
         return false;
     }
 
@@ -124,8 +124,18 @@ bool ModPlayer::load_now(const char* filename, uint32_t mix_rate)
 
     // mod_dsp = 2: DSPMOD plays the file as it is (it interprets the patterns itself and streams
     // the samples to its DSP program). Modules it does not take fall back to the parser below.
+    // DSPMOD hangs on modules with more than 64 patterns ("M!K!", e.g. Passing Breeze and Splash
+    // Wave as covered by Reassembler): those are played by the Simplet DSP replay instead.
+    bool simplet = false;
     if (atari_opt.mod_dsp == 2 && fsize >= 1084)
     {
+        int last = 0;
+        for (int i = 0; i < 128; i++) if (raw[952 + i] > last) last = raw[952 + i];
+        simplet = last >= 64;
+    }
+    if (atari_opt.mod_dsp == 2 && fsize >= 1084 && !simplet)
+    {
+        dsp_replay.stop();   // the previous track may have been a Simplet one
         fmdsp.stop();   // the DSP goes to DSPMOD (the FM sound back to the 68k meanwhile)
         if (dspmod.play(raw, mix_rate))
         {
@@ -239,9 +249,10 @@ bool ModPlayer::load_now(const char* filename, uint32_t mix_rate)
     // silence), so the interrupt can hand the DSP one frame's worth in a single run.
     dsp_mode = false;
     dsp_tempo_acc = 0;
-    if (atari_opt.mod_dsp == 1 && num_channels <= 4)
+    if (simplet) dspmod.shutdown();   // DSPMOD may still hold the DSP and Timer A
+    if ((atari_opt.mod_dsp == 1 || simplet) && num_channels <= 4)
         fmdsp.stop();   // the DSP goes to the replay (the FM sound back to the 68k meanwhile)
-    if (atari_opt.mod_dsp == 1 && num_channels <= 4 && dsp_replay.start())
+    if ((atari_opt.mod_dsp == 1 || simplet) && num_channels <= 4 && dsp_replay.start())
     {
         for (int i = 0; i < num_samples; i++)
         {

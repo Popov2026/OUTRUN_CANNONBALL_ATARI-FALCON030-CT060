@@ -197,7 +197,7 @@ Each option is described in [`outrun.ini.example`](outrun.ini.example).
 | `sound_irq` | 0 / 1 / 2 | 2 | 1 = sound made from a timer interrupt: the music keeps its tempo and has no holes even when the game runs slower than real time; 2 = automatic (on with a 68040/68060, off with a 68030, which has no time to spare for it) |
 | `fm_dsp` | 0 / 1 | 1 | The FM chip (YM2151) is computed by the Falcon's **DSP56001**: same sound, bit for bit, for a fraction of the CPU time (see below) |
 | `mod` | 0 / 1 | 0 | Replaces the FM music with `.mod` files (see below) |
-| `mod_dsp` | 0 / 1 / 2 | 0 | Plays the `.mod` files on the Falcon's **DSP56001** instead of the CPU: 1 = SoundTracker replay (Simplet / ABSTRACT), 2 = DSPMOD 3.4 (bITmASTER of TCE) |
+| `mod_dsp` | 0 / 1 / 2 | 0 | Plays the `.mod` files on the Falcon's **DSP56001** instead of the CPU: 1 = SoundTracker replay (Simplet / ABSTRACT), 2 = DSPMOD 3.4 (bITmASTER of TCE; modules with more than 64 patterns go to the Simplet replay, DSPMOD hangs on them) |
 | `freemint` | 0 / 1 | 1 | Long ROM names (1) or names renamed to 8.3 (0) |
 | `joy_accel` | `up`, `down`, `fire`, `b`, `c`, `none` (combine with `+`) | `up+b` | What accelerates with a joystick / pad |
 | `joy_brake` | same | `down+c` | What brakes |
