@@ -61,6 +61,7 @@ jobs:
         run: |
           if gh release view "$VERSION" >/dev/null 2>&1; then
             gh release upload "$VERSION" "cannonball_falcon_${VERSION}.zip" --clobber
+            gh release edit "$VERSION" --notes-file .github/prerelease-notes.md
           else
             gh release create "$VERSION" "cannonball_falcon_${VERSION}.zip" \
               --prerelease --target "$GITHUB_SHA" \

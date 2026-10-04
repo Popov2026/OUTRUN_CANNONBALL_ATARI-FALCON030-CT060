@@ -17,6 +17,18 @@ optionally your `.mod` files in `Music/` (see the README).
   `outrun.ini`.
 - `PADTEST.TOS`: joystick test showing what each socket returns.
 
+### `.mod` music: the `mod_dsp` setting
+Only with `mod = 1` and your own `TRACK1.MOD` … `TRACK4.MOD` in `Music/` (4-channel ProTracker modules).
+A missing file plays the original FM music for that track.
+
+| `mod_dsp` | Who plays the `.mod` | Notes |
+|---|---|---|
+| `0` | the 68k (the port's own mixer) | works everywhere, costs CPU time |
+| `1` | the DSP, with the SoundTracker replay by Simplet / ABSTRACT | 49 kHz stereo, steady tempo; **recommended**, especially on CT60/CT63 |
+| `2` | the DSP, with DSPMOD 3.4 by bITmASTER of TCE | Falcon 030 only. With a 68040/68060 (DSPMOD is not 68060-safe: it froze or slowed the game), and for modules with more than 64 patterns (`M!K!`, DSPMOD hangs on them), the game uses the Simplet replay instead, i.e. the same as `1` |
+
+While a `.mod` is played by the DSP, the game's FM sounds go back to the 68k (the DSP does one job at a time).
+
 Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatari 68060 + DSP and a real CT60
 (joystick). On a 16 MHz Falcon 030 the game stays too slow to be really playable.
 
@@ -39,6 +51,18 @@ et éventuellement tes `.mod` dans `Music/` (voir le README).
   modules de plus de 64 patterns, c'est le replay DSP de Simplet qui est utilisé (DSPMOD n'est pas fiable sur 68060).
 - **Joystick corrigé sur vrai CT60**, et **configurable** : `joy_accel`, `joy_brake`, `joy_gear` dans `outrun.ini`.
 - `PADTEST.TOS` : test du joystick qui affiche ce que renvoie chaque prise.
+
+### Musique `.mod` : le réglage `mod_dsp`
+Seulement avec `mod = 1` et tes propres `TRACK1.MOD` … `TRACK4.MOD` dans `Music/` (modules ProTracker 4 voies).
+Si un fichier manque, ce morceau joue la musique FM d'origine.
+
+| `mod_dsp` | Qui joue le `.mod` | Remarques |
+|---|---|---|
+| `0` | le 68k (le mixeur du portage) | marche partout, coûte du temps CPU |
+| `1` | le DSP, avec le replay SoundTracker de Simplet / ABSTRACT | 49 kHz stéréo, tempo régulier ; **conseillé**, surtout sur CT60/CT63 |
+| `2` | le DSP, avec DSPMOD 3.4 de bITmASTER (TCE) | Falcon 030 seulement. Avec un 68040/68060 (DSPMOD n'est pas fiable sur 68060 : il bloquait ou ralentissait le jeu), et pour les modules de plus de 64 patterns (`M!K!`, DSPMOD se bloque dessus), le jeu utilise le replay Simplet, donc comme `1` |
+
+Pendant qu'un `.mod` est joué par le DSP, les sons FM du jeu repassent sur le 68k (le DSP fait une seule chose à la fois).
 
 Testé sous Hatari (Falcon 030 et 68060 avec émulation du DSP) et par des utilisateurs sous Hatari 68060 + DSP et
 sur un vrai CT60 (joystick). Sur un Falcon 030 à 16 MHz, le jeu reste trop lent pour être vraiment jouable.

@@ -18,6 +18,17 @@ Changes since v0.27:
     written for the 68030: with a 68040/68060, and for modules with more than
     64 patterns, the modules are played by the Simplet DSP replay instead
     (as with mod_dsp = 1).
+  - mod_dsp, the .mod replay (mod = 1, files in Music\):
+      0 = mixed by the 68k;
+      1 = played by the DSP, SoundTracker replay by Simplet / ABSTRACT
+          (recommended, especially on CT60/CT63);
+      2 = played by the DSP, DSPMOD 3.4 (bITmASTER of TCE), Falcon 030 only:
+          with a 68040/68060, or for a module with more than 64 patterns,
+          the game uses the Simplet replay (= 1). DSPMOD is not 68060-safe
+          (it writes to the DSP without waiting for it and uses a 64-bit
+          mulu.l, which the 68060 only emulates): it froze or slowed the
+          game; and it hangs on modules with more than 64 patterns.
+    While a .mod is played by the DSP, the FM sounds go back to the 68k.
   Controls
   - Joystick fixed on real CT60 hardware (enhanced ports read after a short
     settling delay; both DB9 ports read; IKBD set up through TOS).
