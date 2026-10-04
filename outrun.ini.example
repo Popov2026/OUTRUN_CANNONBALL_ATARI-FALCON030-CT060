@@ -43,6 +43,15 @@ fm_half      = 0     # Only matters for the original FM music (mod = 0), with fm
                      # 1 = at half rate: cheaper (13.5 ms per game step instead of 18.6 on a
                      # 68060) but the FM sounds duller.
 
+sound_irq    = 2     # 1 = the sound is made from a timer interrupt, whenever the sound hardware
+                     # needs it: the music keeps its tempo and has no holes even when the game
+                     # runs slower than real time.
+                     # 0 = one step of sound per game step: when the game is slower than real
+                     # time, the sound comes out in pieces.
+                     # 2 = 1 with a 68040/68060, 0 with a 68030 (default). A 16 MHz 68030 needs
+                     # more than all its time for the sound alone, so the interrupt would leave
+                     # nothing for the game.
+
 fm_dsp       = 1     # 1 = the FM music and sounds are computed by the Falcon's DSP (default): the
                      # same sound as the processor would make, for a fraction of its time - on a
                      # 68030 the FM music alone needs far more than the processor has. The FM sound

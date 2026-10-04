@@ -11,6 +11,7 @@
 #include <climits>
 #include <cstdio>
 #include <mint/osbind.h>
+#include <mint/cookie.h>
 #include "atari/audio.hpp"
 #include "atari/modplayer.hpp"
 #include "atari/dsp_replay.hpp"
@@ -19,6 +20,7 @@
 #include "atari/options.hpp"
 #include "frontend/config.hpp"
 #include "engine/audio/osoundint.hpp"
+#include "main.hpp"
 
 // --------------------------------------------------------------------------
 // STE/Falcon DMA sound registers (offsets checked against EmuTOS's dmasound.c).
@@ -32,12 +34,22 @@
 #define DMA_END_LO     (*(volatile uint8_t*)0xFF8913)
 #define DMA_MODE       (*(volatile uint8_t*)0xFF8921) // bits0-1 rate, bit7 mono/stereo
 
+#ifdef AUDIO_TIMING
+static uint32_t fine_time();
+uint32_t g_t_drv, g_t_pcm, g_t_fm, g_t_mix;   // per 300 steps, 1/38400 s
+#define T_MARK(v) const uint32_t v = fine_time()
+#else
+#define T_MARK(v)
+#endif
+
 static uint32_t dma_started = 0;   // buffers handed to the DMA (statistics)
 
 // Nothing is allocated here: the buffers are created by start_audio(), once the options are known.
 Audio::Audio()
 {
     sound_enabled = false;
+    irq_on = false;
+    irq_next = 0;
     for (int i = 0; i < NUM_DMA_BUFFERS; i++) dma_buffer[i] = nullptr;
     playing = -1;
     queue_len = 0;
@@ -85,11 +97,13 @@ void Audio::start_audio()
     playing = 0;
     queue_len = 0;
     start_dma(dma_buffer[0], 64);   // a short burst of silence; real buffers follow via service()
+    start_irq();
 }
 
 // Stops the DMA playback. The buffers stay allocated until the destructor.
 void Audio::stop_audio()
 {
+    stop_irq();
     if (!sound_enabled) return;
     DMA_CTRL = 0;
     sound_enabled = false;
@@ -121,6 +135,101 @@ void Audio::start_dma(int8_t* buffer, uint32_t bytes)
 
 // Called every game tick (see main_atari.cpp's main_loop(), same call site
 // as the SDL version's audio.tick()).
+// Called every game step by the main loop: the sound of that step - unless the sound comes
+// from the Timer B interrupt (irq_step()), which then does all of it.
+void Audio::tick()
+{
+    if (!irq_on) tick_now();
+}
+
+// --------------------------------------------------------------------------
+// Sound from an interrupt (outrun.ini's sound_irq, on by default).
+//
+// Each game step makes one step of sound (1/30 s). When the machine cannot keep up with the
+// game - a Falcon 030 runs it at about a quarter of real time - steps are skipped and the
+// sound comes out in pieces, whoever computes it. So the sound driver (osoundint.tick(), the
+// game's Z80 program) and the sound steps are run from MFP Timer B instead, about 60 times a
+// second: a step is made whenever fewer than two buffers wait for the DMA (or, while a .mod
+// plays on the DSP, every 1/30 s of real time). The music then keeps its tempo and has no
+// holes whatever the picture rate; the game only queues its sound commands, and the few
+// things shared with it are guarded by atari_sound_lock() / atari_sound_unlock().
+// --------------------------------------------------------------------------
+extern "C" void sound_isr();            // sound_asm.S: Timer B, calls sound_isr_step()
+extern "C" void sound_isr_step() { cannonball::audio.irq_step(); }
+
+static void (*old_timer_b)() = 0;
+static int lock_depth = 0;
+
+#define MFP8(a) (*(volatile uint8_t*)(a))
+
+// Keeps the sound interrupt out (nests). Called by the main program only; touches the MFP
+// only while the interrupt is installed (supervisor mode then).
+void atari_sound_lock()
+{
+    if (lock_depth++ == 0 && cannonball::audio.irq_mode()) MFP8(0xfffffa13L) &= ~0x01;   // Timer B masked (a pending one waits)
+}
+
+void atari_sound_unlock()
+{
+    if (lock_depth > 0 && --lock_depth == 0 && cannonball::audio.irq_mode()) MFP8(0xfffffa13L) |= 0x01;
+}
+
+void Audio::start_irq()
+{
+    if (irq_on || !atari_opt.sound_irq) return;
+    if (atari_opt.sound_irq == 2)
+    {
+        long cpu = 0;
+        if (Getcookie(C__CPU, &cpu) != C_FOUND || cpu < 40) return;   // automatic: 68040/68060 only
+    }
+    irq_next = *(volatile uint32_t*)0x4BAL * 3;
+    MFP8(0xfffffa1bL) = 0;                       // Timer B stopped
+    old_timer_b = *(void (**)())0x120L;
+    *(void (**)())0x120L = sound_isr;
+    MFP8(0xfffffa07L) |= 0x01;                   // enabled
+    if (lock_depth == 0) MFP8(0xfffffa13L) |= 0x01;   // unmasked
+    MFP8(0xfffffa21L) = 205;                     // 2457600 / 200 / 205 = 59.9 Hz
+    MFP8(0xfffffa1bL) = 7;                       // delay mode, divider 200
+    irq_on = true;
+}
+
+void Audio::stop_irq()
+{
+    if (!irq_on) return;
+    MFP8(0xfffffa1bL) = 0;
+    MFP8(0xfffffa07L) &= ~0x01;
+    MFP8(0xfffffa13L) &= ~0x01;
+    MFP8(0xfffffa0fL) &= ~0x01;                  // nothing left in service
+    *(void (**)())0x120L = old_timer_b;
+    irq_on = false;
+}
+
+// From the Timer B interrupt (with the interrupt level lowered, never re-entered).
+void Audio::irq_step()
+{
+    if (!sound_enabled || !osoundint.ym || !osoundint.pcm) return;
+    const uint32_t now = *(volatile uint32_t*)0x4BAL * 3;    // 1/600 s
+    if (dsp_replay.active() || dspmod.active())
+    {
+        // the DAC listens to the DSP: one step per 1/30 s of real time
+        if ((int32_t)(now - irq_next) < 0) return;
+        if ((int32_t)(now - irq_next) > 6 * 20) irq_next = now;   // far behind: start again
+        irq_next += 20;
+    }
+    else
+    {
+        service_now();
+        if (queue_len >= 2) return;                // enough sound waiting for the DMA
+        irq_next = now;
+    }
+    T_MARK(d0);
+    osoundint.tick();
+#ifdef AUDIO_TIMING
+    g_t_drv += fine_time() - d0;
+#endif
+    tick_now();
+}
+
 #ifdef AUDIO_TIMING
 // Test aid: 68k time spent in tick(), in 1/38400 s (200 Hz counter + MFP Timer C), averaged
 // over 300 steps into AUDT.TXT.
@@ -132,7 +241,7 @@ static uint32_t fine_time()
     do { a = *hz; c = *tcdr; b = *hz; } while (a != b);
     return a * 192 + (192 - c);
 }
-void Audio::tick()
+void Audio::tick_now()
 {
     const uint32_t t0 = fine_time();
     tick_body();
@@ -142,19 +251,29 @@ void Audio::tick()
     if (++n == 300)
     {
         FILE* f = fopen("AUDT.TXT", "a");
-        if (f) { fprintf(f, "fm_dsp=%d tick avg %lu us max %lu us\r\n", fmdsp.active() ? 1 : 0, (unsigned long)(sum / n * 26), (unsigned long)(mx * 26)); fclose(f); }
+        static uint32_t last = 0;
+        const uint32_t now = fine_time();
+        if (f) { fprintf(f, "fm_dsp=%d tick avg %lu us max %lu us; 300 steps took %lu ms (10000 = real time); per step: driver %lu pcm %lu fm %lu us\r\n", fmdsp.active() ? 1 : 0,
+                         (unsigned long)(sum / n * 26), (unsigned long)(mx * 26), (unsigned long)(last ? (now - last) * 26 / 1000 : 0),
+                         (unsigned long)(g_t_drv / n * 26), (unsigned long)(g_t_pcm / n * 26), (unsigned long)(g_t_fm / n * 26)); fclose(f); }
+        g_t_drv = g_t_pcm = g_t_fm = 0;
+        last = now;
         sum = n = mx = 0;
     }
 }
 void Audio::tick_body()
 #else
-void Audio::tick()
+void Audio::tick_now()
 #endif
 {
     if (!sound_enabled) return;
 
     uint32_t a0 = PERF_NOW();
+    T_MARK(m0);
     osoundint.pcm->stream_update();
+#ifdef AUDIO_TIMING
+    g_t_pcm += fine_time() - m0;
+#endif
     uint32_t a1 = PERF_NOW();
     const bool fm_on_dsp = use_fmdsp();
 #ifdef FMDSP_VERIFY
@@ -179,7 +298,11 @@ void Audio::tick()
     static int16_t fm_silence[DMA_BUFFER_SAMPLES * 2];
     if (fm_on_dsp)
     {
+        T_MARK(f0);
         const int16_t* fm = fmdsp.step(frames);
+#ifdef AUDIO_TIMING
+        g_t_fm += fine_time() - f0;
+#endif
 #ifdef FMDSP_VERIFY
         {
             static int16_t ref[DMA_BUFFER_SAMPLES * 2];
@@ -279,7 +402,7 @@ void Audio::tick()
     // Mix (identical clipping logic to sdl2/audio.cpp), then convert the
     // engine's 16-bit signed samples down to the STE DMA's 8-bit signed
     // stereo format and write into the buffer NOT currently playing.
-    service();
+    service_now();
     int fill_idx = 0;
     while (fill_idx == playing || (queue_len > 0 && fill_idx == queue[0]) || (queue_len > 1 && fill_idx == queue[1]))
         fill_idx++;                                                   // the buffer nobody is using
@@ -324,7 +447,7 @@ void Audio::tick()
     }
     queue[queue_len++] = fill_idx;
     queued_bytes = samples * 2;
-    service();
+    service_now();
 }
 
 // True while the DMA is still playing a buffer (its play bit clears by itself at the end).
@@ -336,6 +459,11 @@ bool Audio::dma_busy()
 // Hand the next queued buffer to the DMA once it is idle.  Called after each tick and from the
 // main loop's waiting loop, so the next buffer starts within microseconds of the last one ending.
 void Audio::service()
+{
+    if (!irq_on) service_now();
+}
+
+void Audio::service_now()
 {
     if (!sound_enabled || queue_len == 0 || dsp_replay.active() || dspmod.active() || dma_busy()) return;
     playing = queue[0];
@@ -350,7 +478,7 @@ void Audio::service()
 // chip only advances its timers, which drive the game's sound sequencer.
 void Audio::tick_muted()
 {
-    if (!sound_enabled) return;
+    if (!sound_enabled || irq_on) return;
     osoundint.pcm->stream_update();   // sample-end flags are read by the game
     osoundint.ym->skip_frame();
     if (fmdsp.active()) fmdsp.step(osoundint.pcm->buffer_size / 2);   // the DSP's FM chip keeps up

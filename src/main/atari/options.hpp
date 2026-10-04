@@ -29,6 +29,15 @@
                         channel synthesis is halved). The price is the top octave of the FM sound (nothing above
                         ~3 kHz), so the music is duller. Sound effects on the PCM chip and .mod
                         music are not affected. Only read at start-up. Ignored with fm_dsp = 1.
+      sound_irq     2   1 = the sound is made from a timer interrupt (MFP Timer B, ~60 Hz), one step
+                        whenever the DMA needs one: it keeps its tempo and has no holes even
+                        when the game runs slower than real time. The sound then costs its
+                        time whatever the picture rate, so "sound = 2" works as "sound = 1".
+                        0 = one step of sound per game step, from the main loop.
+                        2 = 1 with a 68040/68060, 0 with a 68030 (default): on a 16 MHz 68030
+                        a step of sound alone (sound driver ~10 ms, PCM chip ~19 ms, FM on the
+                        DSP ~3 ms, mix ~3 ms) needs more than the 33 ms it lasts, so from an
+                        interrupt it would leave the game no time at all.
       fm_dsp        1   1 = the FM chip's sound is computed by the DSP56001 (atari/fmdsp.hpp): the
                         same samples as the 68k's emulation, at no cost to the 68k beyond
                         sending the register changes and reading the samples back. The FM sound
@@ -83,6 +92,7 @@ struct AtariOptions
     int music;
     int fm_half;
     int fm_dsp;
+    int sound_irq;
     int mod;
     int mod_dsp;
     int freemint;

@@ -194,6 +194,7 @@ Each option is described in [`outrun.ini.example`](outrun.ini.example).
 | `sound` | 0 / 1 / 2 | 2 | 0 = silent, 1 = sound always synthesised, 2 = sound only when CPU time is left |
 | `music` | 0 / 1 | 1 | Turns the music off without affecting sound effects |
 | `fm_half` | 0 / 1 | 0 | FM chip emulated at half rate: cheaper, but duller sound (with `fm_dsp=0` only) |
+| `sound_irq` | 0 / 1 / 2 | 2 | 1 = sound made from a timer interrupt: the music keeps its tempo and has no holes even when the game runs slower than real time; 2 = automatic (on with a 68040/68060, off with a 68030, which has no time to spare for it) |
 | `fm_dsp` | 0 / 1 | 1 | The FM chip (YM2151) is computed by the Falcon's **DSP56001**: same sound, bit for bit, for a fraction of the CPU time (see below) |
 | `mod` | 0 / 1 | 0 | Replaces the FM music with `.mod` files (see below) |
 | `mod_dsp` | 0 / 1 / 2 | 0 | Plays the `.mod` files on the Falcon's **DSP56001** instead of the CPU: 1 = SoundTracker replay (Simplet / ABSTRACT), 2 = DSPMOD 3.4 (bITmASTER of TCE) |

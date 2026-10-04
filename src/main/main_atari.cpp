@@ -203,7 +203,7 @@ static void tick()
 #endif
                 if (tick_frame) input.frame_done();
 #ifndef NO_SOUND   // -DNO_SOUND also skips the engine's own sound command processing
-                osoundint.tick();
+                if (!audio.irq_mode()) osoundint.tick();   // else the sound interrupt runs it (atari/audio.cpp)
 #endif
 #ifdef PERF_PRINT
                 {

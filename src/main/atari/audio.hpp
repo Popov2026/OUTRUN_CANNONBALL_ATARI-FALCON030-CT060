@@ -39,6 +39,10 @@
 #include "../globals.hpp"
 #include "../stdint.hpp"
 
+// Keep the sound interrupt out while the main program changes what it uses (audio.cpp).
+void atari_sound_lock();
+void atari_sound_unlock();
+
 struct wav_t {
     uint8_t loaded;
     int16_t *data;
@@ -55,6 +59,8 @@ public:
     void init();
     void tick();
     void tick_muted();   // keep chip timers/flags moving without synthesising or playing audio
+    void irq_step();     // from the sound interrupt (see audio.cpp): one step when needed
+    bool irq_mode() const { return irq_on; }
     void service();      // start the queued buffer as soon as the DMA has finished the current one
     void start_audio();
     void stop_audio();
@@ -85,6 +91,12 @@ private:
 
     void clear_buffers();
     bool use_fmdsp();
+    void tick_now();     // one step of sound: chips, mix, DMA queue
+    void service_now();
+    void start_irq();
+    void stop_irq();
+    bool irq_on;         // the sound runs from the Timer B interrupt
+    uint32_t irq_next;   // next step's time (1/600 s) while a .mod plays on the DSP
 #ifdef AUDIO_TIMING
     void tick_body();
 #endif

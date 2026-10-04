@@ -15,6 +15,13 @@
 #ifdef PLATFORM_ATARI
 #include "atari/options.hpp"
 void atari_fm_restart();   // atari/audio.cpp
+void atari_sound_lock();   // the sound may run from an interrupt (atari/audio.cpp)
+void atari_sound_unlock();
+#define SOUND_LOCK()   atari_sound_lock()
+#define SOUND_UNLOCK() atari_sound_unlock()
+#else
+#define SOUND_LOCK()
+#define SOUND_UNLOCK()
 #endif
 
 OSoundInt osoundint;
@@ -33,6 +40,7 @@ OSoundInt::~OSoundInt()
 
 void OSoundInt::init()
 {
+    SOUND_LOCK();
     if (pcm == NULL)
         pcm = new SegaPCM(SOUND_CLOCK, &roms.pcm, pcm_ram, SegaPCM::BANK_512);       
 
@@ -64,18 +72,21 @@ void OSoundInt::init()
         engine_data[i] = 0;
 
     osound.init(ym, pcm_ram);
+    SOUND_UNLOCK();
 }
 
 // Clear sound queue
 // Source: 0x5086
 void OSoundInt::reset()
 {
+    SOUND_LOCK();
     sound_counter = 0;
     sound_head    = 0;
     sound_tail    = 0;
     sounds_queued = 0;
 
     audio_ticks = 0;
+    SOUND_UNLOCK();
 }
 
 void OSoundInt::tick()
@@ -173,13 +184,17 @@ void OSoundInt::queue_sound(uint8_t snd)
 void OSoundInt::add_to_queue(uint8_t snd)
 {
     // Add sound to the tail end of the queue
+    SOUND_LOCK();
     queue[sound_tail] = snd;
     sound_tail = (sound_tail + 1) & QUEUE_LENGTH;
     sounds_queued++;
+    SOUND_UNLOCK();
 }
 
 void OSoundInt::queue_clear()
 {
+    SOUND_LOCK();
     sound_tail = 0;
     sounds_queued = 0;
+    SOUND_UNLOCK();
 }

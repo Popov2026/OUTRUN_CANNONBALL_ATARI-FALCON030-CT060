@@ -13,6 +13,7 @@
 #include "atari/dsp_replay.hpp"
 #include "atari/dspmod.hpp"
 #include "atari/fmdsp.hpp"
+#include "atari/audio.hpp"
 
 ModPlayer modplayer;
 
@@ -51,7 +52,15 @@ ModPlayer::~ModPlayer()
 
 // Frees the current song. The DSP replay is told first (dsp_ready) so that its interrupt stops
 // reading the sample data before it is freed.
+// The sound interrupt (atari/audio.cpp) mixes and plays the module: kept out meanwhile.
 void ModPlayer::unload()
+{
+    atari_sound_lock();
+    unload_now();
+    atari_sound_unlock();
+}
+
+void ModPlayer::unload_now()
 {
     if (dspmod_raw)
     {
@@ -81,7 +90,15 @@ static inline uint16_t rd16(const uint8_t* p) { return (uint16_t)((p[0] << 8) | 
 // accepted. False (nothing loaded, nothing playing) if the file is missing or not a module.
 bool ModPlayer::load(const char* filename, uint32_t mix_rate)
 {
-    unload();
+    atari_sound_lock();
+    const bool ok = load_now(filename, mix_rate);
+    atari_sound_unlock();
+    return ok;
+}
+
+bool ModPlayer::load_now(const char* filename, uint32_t mix_rate)
+{
+    unload_now();
 
     FILE* f = fopen(filename, "rb");
     if (!f)
