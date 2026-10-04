@@ -15,7 +15,7 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atar
 > [`outrun.ini`](#options-file-outrunini) help. For full speed, use `CB060.TOS` on a Falcon
 > with a CT60 / CT63.
 
-**Current version: v0.27**. The full changelog is in [`VERSION.txt`](VERSION.txt).
+**Current version: v0.30 beta**. The full changelog is in [`VERSION.txt`](VERSION.txt).
 
 > ⚠️ **The OutRun ROMs are not included** (they belong to SEGA). You need your own dump of
 > the game, **revision B**: see [Install the ROMs](#2-install-the-roms).
@@ -50,7 +50,7 @@ folder and empty `roms/` and `Music/` folders with instructions. Unzip it, add y
 
 ```
 .
-├── dist/                    ← ready-to-run binaries (v0.27)
+├── dist/                    ← ready-to-run binaries (v0.30 beta)
 │   ├── CB030.TOS            original Falcon 030 (68030 @ 16 MHz, slow)
 │   ├── CB060.TOS            Falcon + CT60 / CT63 (68060, full speed)
 │   ├── outrun.ini           preset options (.mod music played by the DSP)
@@ -165,7 +165,7 @@ with no menu. Press **Return** to insert a coin and start a race.
 Left / right to steer, forward to accelerate, back to brake, fire to change gear. The
 keyboard and the joystick work at the same time.
 
-### Enhanced joystick ports (the two 15-pin sockets of the Falcon), new in v0.27
+### Enhanced joystick ports (the two 15-pin sockets of the Falcon)
 
 These ports take a Jaguar pad, or a plain joystick on an adapter:
 
@@ -388,13 +388,14 @@ gives 23.1 fps.
 
 ## Known limitations and untested areas
 
-- **Nothing has been checked on real hardware yet.** All testing was done in Hatari, where
-  68060 emulation is marked "experimental".
-- The enhanced joystick ports (v0.27) have not been tested with a pad actually plugged in.
+- **Most testing was done in Hatari** (Falcon 030, and 68060 with DSP emulation, where the 68060
+  is marked "experimental"). On a real CT60 the joystick was reported working; the DSP sound
+  (FM on the DSP, `.mod` replays) has only been checked in Hatari so far.
+- A Jaguar pad on the enhanced joystick ports has not been tested actually plugged in.
 - Cannonball's frontend menus (settings, Time Trial…) are not included: the game starts
   straight away.
 - There is no analogue steering wheel or pedal support.
-- On real hardware without FreeMiNT, you need `freemint=0` and ROMs renamed to 8.3.
+- On real hardware without FreeMiNT, you need `freemint=0` and ROMs renamed to 8.3 (`ROMNAME.TOS` does it).
 - Keyboard: the handler disables IKBD mouse and joystick packets at start-up. If a key ever
   seems stuck "down", that is the first place to look (`atari/input.cpp`).
 
@@ -409,7 +410,7 @@ Feedback is welcome, especially from real hardware (original Falcon 030, CT60/CT
 | [`README_ATARI.md`](README_ATARI.md) | Full technical documentation of the port: build, build flags, Hatari, pitfalls, measurements |
 | [`ATARI_PORT_FILES.md`](ATARI_PORT_FILES.md) | What each added or modified file does, hooks in the engine, bugs fixed |
 | [`DSP_NOTES.md`](DSP_NOTES.md) | Log of the DSP56001 work |
-| [`VERSION.txt`](VERSION.txt) | Changes in v0.27 |
+| [`VERSION.txt`](VERSION.txt) | Changes in v0.30 beta |
 | [`outrun.ini.example`](outrun.ini.example) | Every run-time option |
 | [`README_CANNONBALL.md`](README_CANNONBALL.md) | Original Cannonball README (Windows / Linux / Pi build) |
 

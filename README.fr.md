@@ -16,7 +16,7 @@ Portage du moteur **[Cannonball](https://github.com/djyt/cannonball)** de Chris 
 > réglages allégés indiqués dans la section [`outrun.ini`](#fichier-doptions-outrunini)
 > aident. Pour la pleine vitesse, utilise `CB060.TOS` sur un Falcon équipé d'une CT60 / CT63.
 
-**Version actuelle : v0.27**. Le journal complet des changements est dans
+**Version actuelle : v0.30 bêta**. Le journal complet des changements est dans
 [`VERSION.txt`](VERSION.txt) (en anglais).
 
 > ⚠️ **Les ROMs d'OutRun ne sont pas fournies** (elles appartiennent à SEGA). Il te faut ton
@@ -53,7 +53,7 @@ ni aucune musique `.mod` n'est incluse.
 
 ```
 .
-├── dist/                    ← binaires prêts à l'emploi (v0.27)
+├── dist/                    ← binaires prêts à l'emploi (v0.30 bêta)
 │   ├── CB030.TOS            Falcon 030 d'origine (68030 @ 16 MHz, lent)
 │   ├── CB060.TOS            Falcon + CT60 / CT63 (68060, pleine vitesse)
 │   ├── outrun.ini           options pré-réglées (musique .mod jouée par le DSP)
@@ -169,7 +169,7 @@ en mode démo, sans menu. Appuie sur **Entrée** pour mettre une pièce et lance
 Gauche / droite pour diriger, avant pour accélérer, arrière pour freiner, bouton pour changer
 de vitesse. Le clavier et le joystick fonctionnent en même temps.
 
-### Ports joystick étendus (les deux prises 15 broches du Falcon), nouveau en v0.27
+### Ports joystick étendus (les deux prises 15 broches du Falcon)
 
 Ces ports acceptent un pad Jaguar, ou un joystick classique branché sur un adaptateur :
 
@@ -396,13 +396,14 @@ Effet de `vscale` sur le 68060 émulé : 100 donne 18,3 i/s, 67 donne 21,5 i/s e
 
 ## Limites connues et points non testés
 
-- **Rien n'a encore été vérifié sur une vraie machine.** Tous les tests ont été faits sous
-  Hatari, où l'émulation du 68060 est marquée « expérimentale ».
-- Les ports joystick étendus (v0.27) n'ont pas été testés avec un pad réellement branché.
+- **La plupart des tests ont été faits sous Hatari** (Falcon 030, et 68060 avec émulation du DSP,
+  où le 68060 est marqué « expérimental »). Sur un vrai CT60, le joystick a été signalé comme
+  fonctionnel ; le son par le DSP (FM sur le DSP, replays `.mod`) n'a été vérifié que sous Hatari.
+- Un pad Jaguar sur les ports joystick étendus n'a pas été testé réellement branché.
 - Les menus frontend de Cannonball (réglages, Time Trial…) ne sont pas inclus : le jeu démarre
   directement.
 - Pas de volant ni de pédales analogiques.
-- Sur une vraie machine sans FreeMiNT, il faut `freemint=0` et des ROMs renommées en 8.3.
+- Sur une vraie machine sans FreeMiNT, il faut `freemint=0` et des ROMs renommées en 8.3 (`ROMNAME.TOS` le fait).
 - Clavier : le gestionnaire désactive les paquets souris et joystick de l'IKBD au démarrage.
   Si une touche semble rester « enfoncée », c'est le premier endroit à regarder
   (`atari/input.cpp`).
@@ -419,7 +420,7 @@ Jaguar).
 | [`README_ATARI.md`](README_ATARI.md) | Documentation technique complète du portage : build, options de compilation, Hatari, pièges, mesures (en anglais) |
 | [`ATARI_PORT_FILES.md`](ATARI_PORT_FILES.md) | Rôle de chaque fichier ajouté ou modifié, points d'accroche dans le moteur, bugs corrigés (en anglais) |
 | [`DSP_NOTES.md`](DSP_NOTES.md) | Journal du travail sur le DSP56001 (en anglais) |
-| [`VERSION.txt`](VERSION.txt) | Changements de la v0.27 (en anglais) |
+| [`VERSION.txt`](VERSION.txt) | Changements de la v0.30 bêta (en anglais) |
 | [`outrun.ini.example`](outrun.ini.example) | Toutes les options d'exécution (en anglais) |
 | [`README_CANNONBALL.md`](README_CANNONBALL.md) | README d'origine de Cannonball (build Windows / Linux / Pi) |
 
