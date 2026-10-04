@@ -1,7 +1,8 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.27 (compiled release)
-See VERSION.txt at the root of the repository for the changelog since v0.26.
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.30 beta (compiled release)
+See VERSION.txt at the root of the repository for the changelog since v0.27.
 
 CB030.TOS - original Falcon 030 (68030 @ 16 MHz): runs, but too slow to be really playable
 CB060.TOS - Falcon + CT60 / CT63 (68060): full speed
 outrun.ini - mod=1, mod_dsp=1 (.mod music played by the DSP; set mod_dsp=0 for CPU mixing,
-             mod=0 for the original FM music)
+             mod=0 for the original FM music, computed by the DSP with fm_dsp=1)
+PADTEST.TOS - joystick test: shows live what each joystick socket returns

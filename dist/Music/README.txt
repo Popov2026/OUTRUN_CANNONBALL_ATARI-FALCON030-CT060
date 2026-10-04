@@ -8,6 +8,6 @@ Place your own Amiga ProTracker .mod files here:
 Enable with mod=1 in outrun.ini (needs music=1 too). A missing file falls
 back to the game's normal FM music for that track.
 
-Optionally also set mod_dsp=1 to play these on the Falcon's DSP56001 instead
+Optionally also set mod_dsp=1 (or 2) to play these on the Falcon's DSP56001 instead
 of mixing them on the main CPU (needs mod=1 too): 49170 Hz stereo, steady
 tempo. Default is mod_dsp=0 (CPU mixing). See README_ATARI.md.

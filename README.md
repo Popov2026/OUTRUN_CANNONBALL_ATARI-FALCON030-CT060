@@ -23,7 +23,7 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atar
 ### Download
 
 The ready-to-run package is on the **[Releases](../../releases)** page:
-`cannonball_falcon_v0.27.zip` contains `CB030.TOS`, `CB060.TOS`, `outrun.ini`, the `res/`
+`cannonball_falcon_v0.30-beta.zip` contains `CB030.TOS`, `CB060.TOS`, `PADTEST.TOS`, `outrun.ini`, the `res/`
 folder and empty `roms/` and `Music/` folders with instructions. Unzip it, add your ROMs
 (and optionally your `.mod` files) and run. No ROMs or `.mod` music are included.
 

@@ -9,7 +9,7 @@ on:
       version:
         description: 'Tag of the test version (e.g. v0.28-alpha)'
         required: true
-        default: 'v0.28-alpha'
+        default: 'v0.30-beta'
 
 permissions:
   contents: write
@@ -64,6 +64,6 @@ jobs:
           else
             gh release create "$VERSION" "cannonball_falcon_${VERSION}.zip" \
               --prerelease --target "$GITHUB_SHA" \
-              --title "OutRun Cannonball Falcon ${VERSION} (test version)" \
+              --title "OutRun Cannonball Falcon ${VERSION}" \
               --notes-file .github/prerelease-notes.md
           fi

@@ -1,44 +1,44 @@
 **English** | [Français](#français)
 
-## Test version for real hardware (Falcon 030 / CT60 / CT63)
+## v0.30 beta — FM music on the DSP
 
-This is a **test version**. The stable package is still [v0.27](https://github.com/Popov2026/outrun_cannonball_atari-falcon030-ct060/releases/tag/v0.27).
-No ROMs and no `.mod` music are included (same installation as v0.27).
+No ROMs and no `.mod` music are included: add your own ROM set (OutRun revision B) in `roms/`, and
+optionally your `.mod` files in `Music/` (see the README).
 
-### Changes since v0.27
-- **Joystick on the 15-pin enhanced ports:** after selecting a group of lines the game now waits briefly before
-  reading them. A 68060 read them before they had settled (a 68030 and Hatari never show this).
-- **DB9 joystick ports:** both are read (the mouse port and joystick port 1).
-- **IKBD setup:** the "disable mouse / report joystick" commands are now sent through TOS (`Ikbdws`) instead of
-  direct writes that could silently time out.
-- **New: `PADTEST.TOS`**, a small joystick test that shows live what each socket returns.
+### What's new since v0.27
+- **FM music computed by the Falcon's DSP56001** (`fm_dsp = 1`, default). The original FM music no
+  longer stutters: the YM2151 is computed by a DSP program, sample for sample the same sound as the
+  CPU emulation, for a fraction of the CPU time.
+- **Sound from a timer interrupt** on 68040/68060 (`sound_irq = 2`, default): steady music even when the
+  picture rate drops.
+- **`.mod` music with DSPMOD 3.4** (bITmASTER of TCE, `mod_dsp = 2`) on the Falcon 030. With a 68060, and for
+  modules with more than 64 patterns, the Simplet DSP replay is used instead (DSPMOD is not 68060-safe).
+- **Joystick fixed on real CT60 hardware**, and **configurable**: `joy_accel`, `joy_brake`, `joy_gear` in
+  `outrun.ini`.
+- `PADTEST.TOS`: joystick test showing what each socket returns.
 
-### Please test on a real Falcon / CT60 and report back
-1. Run `PADTEST.TOS`, move the joystick, press the buttons, and take a photo of the screen (Esc quits).
-2. Run `CB060.TOS` (CT60/CT63) or `CB030.TOS` (Falcon 030): does the joystick work in the game?
-3. On a CT60 normally booted with FreeMiNT, also try **without FreeMiNT** (plain TOS): set `freemint = 0` in
-   `outrun.ini` and rename the ROMs to 8.3 names (table in `README_ATARI.md`). Is it smoother, is the sound cleaner?
+Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatari 68060 + DSP and a real CT60
+(joystick). On a 16 MHz Falcon 030 the game stays too slow to be really playable.
 
 ---
 
 ## Français
 
-## Version de test pour vrai matériel (Falcon 030 / CT60 / CT63)
+## v0.30 bêta — musique FM sur le DSP
 
-Ceci est une **version de test**. Le paquet stable reste la [v0.27](https://github.com/Popov2026/outrun_cannonball_atari-falcon030-ct060/releases/tag/v0.27).
-Aucune ROM ni musique `.mod` n'est incluse (même installation que la v0.27).
+Aucune ROM ni musique `.mod` n'est incluse : ajoute ton propre jeu de ROMs (OutRun révision B) dans `roms/`,
+et éventuellement tes `.mod` dans `Music/` (voir le README).
 
-### Changements depuis la v0.27
-- **Joystick sur les ports 15 broches :** après avoir choisi une rangée de lignes, le jeu attend un court instant
-  avant de les lire. Un 68060 les lisait avant qu'elles soient stables (ni un 68030 ni Hatari ne montrent ce défaut).
-- **Prises joystick 9 broches :** les deux sont lues (port souris et port joystick 1).
-- **Réglage du clavier (IKBD) :** les commandes « couper la souris / signaler le joystick » passent maintenant par
-  TOS (`Ikbdws`) au lieu d'écritures directes qui pouvaient échouer sans rien dire.
-- **Nouveau : `PADTEST.TOS`**, un petit test qui affiche en direct ce que renvoie chaque prise joystick.
+### Nouveautés depuis la v0.27
+- **Musique FM calculée par le DSP56001 du Falcon** (`fm_dsp = 1`, par défaut). La musique FM d'origine ne
+  saccade plus : le YM2151 est calculé par un programme DSP, au son identique échantillon par échantillon à
+  l'émulation CPU, pour une fraction du temps CPU.
+- **Son produit par une interruption** sur 68040/68060 (`sound_irq = 2`, par défaut) : musique régulière même
+  quand le nombre d'images par seconde baisse.
+- **Musique `.mod` avec DSPMOD 3.4** (bITmASTER de TCE, `mod_dsp = 2`) sur Falcon 030. Avec un 68060, et pour les
+  modules de plus de 64 patterns, c'est le replay DSP de Simplet qui est utilisé (DSPMOD n'est pas fiable sur 68060).
+- **Joystick corrigé sur vrai CT60**, et **configurable** : `joy_accel`, `joy_brake`, `joy_gear` dans `outrun.ini`.
+- `PADTEST.TOS` : test du joystick qui affiche ce que renvoie chaque prise.
 
-### Merci de tester sur un vrai Falcon / CT60 et de faire un retour
-1. Lance `PADTEST.TOS`, bouge le joystick, appuie sur les boutons et prends une photo de l'écran (Échap pour quitter).
-2. Lance `CB060.TOS` (CT60/CT63) ou `CB030.TOS` (Falcon 030) : le joystick marche-t-il dans le jeu ?
-3. Sur un CT60 qui démarre normalement avec FreeMiNT, essaie aussi **sans FreeMiNT** (TOS seul) : mets
-   `freemint = 0` dans `outrun.ini` et renomme les ROMs en 8.3 (table dans `README_ATARI.md`). Est-ce plus fluide,
-   le son est-il plus propre ?
+Testé sous Hatari (Falcon 030 et 68060 avec émulation du DSP) et par des utilisateurs sous Hatari 68060 + DSP et
+sur un vrai CT60 (joystick). Sur un Falcon 030 à 16 MHz, le jeu reste trop lent pour être vraiment jouable.

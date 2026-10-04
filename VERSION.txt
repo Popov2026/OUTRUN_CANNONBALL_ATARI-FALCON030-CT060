@@ -1,19 +1,29 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.27
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.30 beta
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
-Changes since v0.26:
-  - Enhanced joystick ports (the two 15-pin sockets on the left side of the
-    Falcon) are now read, both of them, in addition to the
-    keyboard and the standard joystick port (atari/input.cpp,
-    read_ext_ports()). Jaguar pad or plain joystick on an adapter:
-    left/right = steer, up or B = accelerate, down or C = brake, A (the fire
-    button of a plain joystick) = shift gear, Option = coin/start,
-    Pause = pause.
-    Checked in Hatari only that the ports are detected on the Falcon and read
-    as "nothing pressed" with nothing connected. NOT tested with a pad or a
-    joystick actually plugged in.
-  - Test aid -DPADTRACE_FILE: logs the first values read from those ports.
+Changes since v0.27:
+  Sound
+  - FM on the DSP (fm_dsp = 1, default): the YM2151 FM chip is computed by a
+    DSP56001 program (tools/fmdsp/fm_dsp.asm) instead of the 68k. Same sound,
+    sample for sample (checked on the three music tracks in full, and in the
+    game against the 68k emulation). The 68k only sends the register changes
+    and reads the samples back: on a Falcon 030 the whole sound costs about
+    15 ms per game step instead of 300+ ms with the FM music. The FM and PCM
+    sound come out one game step (1/30 s) late.
+  - Sound from a timer interrupt (sound_irq = 2, default: on with a
+    68040/68060): the music keeps its tempo and has no holes even when the
+    picture rate drops. Off with a 68030, which has no time to spare for it.
+  - .mod music with DSPMOD 3.4 by bITmASTER of TCE (mod_dsp = 2). DSPMOD is
+    written for the 68030: with a 68040/68060, and for modules with more than
+    64 patterns, the modules are played by the Simplet DSP replay instead
+    (as with mod_dsp = 1).
+  Controls
+  - Joystick fixed on real CT60 hardware (enhanced ports read after a short
+    settling delay; both DB9 ports read; IKBD set up through TOS).
+  - Configurable joystick: joy_accel, joy_brake, joy_gear in outrun.ini
+    (up, down, fire, b, c, none, combined with '+').
+  - PADTEST.TOS: shows live what each joystick socket returns.
 
 Layout of this delivery:
   cannonball_src/      - full source tree, no build artifacts, no ROM data.
