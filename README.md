@@ -131,6 +131,11 @@ the GEMDOS 8.3 limit. You have two choices:
   becomes `E10380b.133` and `mpr-10371.9` becomes `M10371.9`. The full table is in
   [`README_ATARI.md`](README_ATARI.md).
 
+**`ROMNAME.TOS`** does the renaming for you: put it next to `CB030.TOS` / `CB060.TOS`, run it and
+press **S** for the short 8.3 names (plain TOS) or **L** for the long names (FreeMiNT only). It
+recognises each ROM by its contents (CRC32), whatever its current name - even the truncated alias
+plain TOS shows for a long name copied from a PC - and sets `freemint` in `outrun.ini` to match.
+
 ### 3. Run
 
 Double-click **`CB030.TOS`** (original Falcon 030) or **`CB060.TOS`** (Falcon with a CT60 / CT63).

@@ -35,6 +35,7 @@ jobs:
           grep -q BUILD_OK b060.log
           m68k-atari-mint-gcc -O2 -mcpu=68000 -c src/main/atari/kbd_asm.S -o kbd_asm.o
           m68k-atari-mint-gcc -O2 -mcpu=68000 -Wall tools/padtest.c kbd_asm.o -o PADTEST.TOS
+          m68k-atari-mint-gcc -O2 -mcpu=68000 -Wall -std=gnu99 tools/romname.c -o ROMNAME.TOS
 
       - name: Package
         env:
@@ -43,7 +44,7 @@ jobs:
           set -e
           D=pkg/OUTRUN
           mkdir -p "$D/roms" "$D/Music"
-          cp CB030.TOS CB060.TOS PADTEST.TOS dist/outrun.ini outrun.ini.example "$D/"
+          cp CB030.TOS CB060.TOS PADTEST.TOS ROMNAME.TOS dist/outrun.ini outrun.ini.example "$D/"
           cp -r res "$D/res"
           cp dist/roms/README.txt dist/roms/roms.txt "$D/roms/"
           cp dist/Music/README.txt "$D/Music/"
