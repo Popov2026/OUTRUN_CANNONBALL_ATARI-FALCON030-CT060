@@ -1,8 +1,19 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.31 beta
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.32 beta
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
-Changes since v0.30 beta:
+Changes since v0.31 beta:
+  Sound
+  - Start of the tunes no longer broken up on real machines: with mod = 1
+    (the default outrun.ini) every tune start looked for Music\TRACKn.MOD on
+    the disk while the sound was held off; with no such file (FM music) the
+    lookup on a real hard disk or card was long enough to break up the
+    sound at the start of each tune (heard on a real CT60, not in Hatari).
+    The four files are now only looked up in the directory once, at
+    start-up (nothing is read); a .mod that is there is read when its tune
+    starts, with the sound running.
+
+Changes in v0.31 beta (since v0.30 beta):
   Picture rate
   - fps option: a steady picture rate between the cadences (e.g. fps = 25
     or 20); replaces cadence. The game slows down if the machine cannot

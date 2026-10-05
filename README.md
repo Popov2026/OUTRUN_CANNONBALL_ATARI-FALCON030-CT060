@@ -15,7 +15,7 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atar
 > [`outrun.ini`](#options-file-outrunini) help. For full speed, use `CB060.TOS` on a Falcon
 > with a CT60 / CT63.
 
-**Current version: v0.31 beta**. The full changelog is in [`VERSION.txt`](VERSION.txt).
+**Current version: v0.32 beta**. The full changelog is in [`VERSION.txt`](VERSION.txt).
 
 > ⚠️ **The OutRun ROMs are not included** (they belong to SEGA). You need your own dump of
 > the game, **revision B**: see [Install the ROMs](#2-install-the-roms).
@@ -23,7 +23,7 @@ rewrite of the 68000/Z80 code of SEGA's **OutRun** arcade machine) to the **Atar
 ### Download
 
 The ready-to-run package is on the **[Releases](../../releases)** page:
-`cannonball_falcon_v0.31-beta.zip` contains `CB030.TOS`, `CB060.TOS`, `PADTEST.TOS`, `ROMNAME.TOS`, `outrun.ini`, the `res/`
+`cannonball_falcon_v0.32-beta.zip` contains `CB030.TOS`, `CB060.TOS`, `PADTEST.TOS`, `ROMNAME.TOS`, `outrun.ini`, the `res/`
 folder and empty `roms/` and `Music/` folders with instructions. Unzip it, add your ROMs
 (and optionally your `.mod` files) and run. No ROMs or `.mod` music are included.
 
@@ -50,7 +50,7 @@ folder and empty `roms/` and `Music/` folders with instructions. Unzip it, add y
 
 ```
 .
-├── dist/                    ← ready-to-run binaries (v0.31 beta)
+├── dist/                    ← ready-to-run binaries (v0.32 beta)
 │   ├── CB030.TOS            original Falcon 030 (68030 @ 16 MHz, slow)
 │   ├── CB060.TOS            Falcon + CT60 / CT63 (68060, full speed)
 │   ├── outrun.ini           preset options (.mod music played by the DSP)
@@ -411,7 +411,7 @@ Feedback is welcome, especially from real hardware (original Falcon 030, CT60/CT
 | [`README_ATARI.md`](README_ATARI.md) | Full technical documentation of the port: build, build flags, Hatari, pitfalls, measurements |
 | [`ATARI_PORT_FILES.md`](ATARI_PORT_FILES.md) | What each added or modified file does, hooks in the engine, bugs fixed |
 | [`DSP_NOTES.md`](DSP_NOTES.md) | Log of the DSP56001 work |
-| [`VERSION.txt`](VERSION.txt) | Changes in v0.31 beta and v0.30 beta |
+| [`VERSION.txt`](VERSION.txt) | Changes in v0.32, v0.31 and v0.30 beta |
 | [`outrun.ini.example`](outrun.ini.example) | Every run-time option |
 | [`README_CANNONBALL.md`](README_CANNONBALL.md) | Original Cannonball README (Windows / Linux / Pi build) |
 

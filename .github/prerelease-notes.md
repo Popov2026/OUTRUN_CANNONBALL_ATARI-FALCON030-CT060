@@ -1,11 +1,18 @@
 **English** | [Français](#français)
 
-## v0.31 beta — faster pictures, steadier picture rate
+## v0.32 beta — clean start of the music on real machines
 
 No ROMs and no `.mod` music are included: add your own ROM set (OutRun revision B) in `roms/`, and
 optionally your `.mod` files in `Music/` (see the README).
 
-### What's new since v0.30 beta
+### What's new since v0.31 beta
+- **The start of each tune is no longer broken up on real machines** (heard on a real CT60). With `mod = 1`
+  (the default `outrun.ini`), every tune start looked for `Music\TRACKn.MOD` on the disk while the sound was
+  held off; without the file (FM music), that lookup on a real hard disk or card was long enough to break up
+  the sound. The four files are now only looked up in the directory once at start-up (nothing is read), and a
+  `.mod` that is there is read when its tune starts, with the sound running.
+
+### v0.31 beta — faster pictures, steadier picture rate (what's new since v0.30 beta)
 - **`fps` option**: a steady picture rate between the cadences, e.g. `fps = 25` or `fps = 20` (replaces
   `cadence`; the game slows down if the machine cannot draw that many pictures).
 - **Steadier automatic picture rate** (`cadence = 0`): 30, 25, 20, 15, 10 or 7.5 pictures/s, down as soon as
@@ -51,12 +58,19 @@ Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatar
 
 ## Français
 
-## v0.31 bêta — images plus rapides, cadence plus stable
+## v0.32 bêta — début des musiques propre sur vraie machine
 
 Aucune ROM ni musique `.mod` n'est incluse : ajoute ton propre jeu de ROMs (OutRun révision B) dans `roms/`,
 et éventuellement tes `.mod` dans `Music/` (voir le README).
 
-### Nouveautés depuis la v0.30 bêta
+### Nouveautés depuis la v0.31 bêta
+- **Le début des musiques n'est plus haché sur vraie machine** (constaté sur un vrai CT60). Avec `mod = 1`
+  (le `outrun.ini` livré), chaque début de musique cherchait `Music\TRACKn.MOD` sur le disque pendant que le son
+  était bloqué ; sans le fichier (musique FM), cette recherche sur un vrai disque ou une carte durait assez pour
+  hacher le son. Les quatre fichiers sont maintenant seulement cherchés dans le répertoire, une fois au
+  démarrage (rien n'est lu), et un `.mod` présent est lu quand sa musique démarre, sans couper le son.
+
+### v0.31 bêta — images plus rapides, cadence plus stable (nouveautés depuis la v0.30 bêta)
 - **Option `fps`** : un nombre d'images par seconde fixe entre les cadences, par ex. `fps = 25` ou `fps = 20`
   (remplace `cadence` ; le jeu ralentit si la machine ne peut pas dessiner autant d'images).
 - **Mode automatique plus stable** (`cadence = 0`) : 30, 25, 20, 15, 10 ou 7,5 images/s ; descend dès que la

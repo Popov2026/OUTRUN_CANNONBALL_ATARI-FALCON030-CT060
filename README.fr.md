@@ -16,7 +16,7 @@ Portage du moteur **[Cannonball](https://github.com/djyt/cannonball)** de Chris 
 > réglages allégés indiqués dans la section [`outrun.ini`](#fichier-doptions-outrunini)
 > aident. Pour la pleine vitesse, utilise `CB060.TOS` sur un Falcon équipé d'une CT60 / CT63.
 
-**Version actuelle : v0.31 bêta**. Le journal complet des changements est dans
+**Version actuelle : v0.32 bêta**. Le journal complet des changements est dans
 [`VERSION.txt`](VERSION.txt) (en anglais).
 
 > ⚠️ **Les ROMs d'OutRun ne sont pas fournies** (elles appartiennent à SEGA). Il te faut ton
@@ -25,7 +25,7 @@ Portage du moteur **[Cannonball](https://github.com/djyt/cannonball)** de Chris 
 ### Téléchargement
 
 Le paquet prêt à l'emploi se trouve sur la page **[Releases](../../releases)** :
-`cannonball_falcon_v0.31-beta.zip` contient `CB030.TOS`, `CB060.TOS`, `PADTEST.TOS`, `ROMNAME.TOS`, `outrun.ini`, le dossier
+`cannonball_falcon_v0.32-beta.zip` contient `CB030.TOS`, `CB060.TOS`, `PADTEST.TOS`, `ROMNAME.TOS`, `outrun.ini`, le dossier
 `res/`, ainsi que des dossiers `roms/` et `Music/` vides accompagnés de leurs instructions.
 Décompresse-le, ajoute tes ROMs (et éventuellement tes `.mod`), puis lance le jeu. Aucune ROM
 ni aucune musique `.mod` n'est incluse.
@@ -53,7 +53,7 @@ ni aucune musique `.mod` n'est incluse.
 
 ```
 .
-├── dist/                    ← binaires prêts à l'emploi (v0.31 bêta)
+├── dist/                    ← binaires prêts à l'emploi (v0.32 bêta)
 │   ├── CB030.TOS            Falcon 030 d'origine (68030 @ 16 MHz, lent)
 │   ├── CB060.TOS            Falcon + CT60 / CT63 (68060, pleine vitesse)
 │   ├── outrun.ini           options pré-réglées (musique .mod jouée par le DSP)
@@ -421,7 +421,7 @@ Jaguar).
 | [`README_ATARI.md`](README_ATARI.md) | Documentation technique complète du portage : build, options de compilation, Hatari, pièges, mesures (en anglais) |
 | [`ATARI_PORT_FILES.md`](ATARI_PORT_FILES.md) | Rôle de chaque fichier ajouté ou modifié, points d'accroche dans le moteur, bugs corrigés (en anglais) |
 | [`DSP_NOTES.md`](DSP_NOTES.md) | Journal du travail sur le DSP56001 (en anglais) |
-| [`VERSION.txt`](VERSION.txt) | Changements des v0.31 et v0.30 bêta (en anglais) |
+| [`VERSION.txt`](VERSION.txt) | Changements des v0.32, v0.31 et v0.30 bêta (en anglais) |
 | [`outrun.ini.example`](outrun.ini.example) | Toutes les options d'exécution (en anglais) |
 | [`README_CANNONBALL.md`](README_CANNONBALL.md) | README d'origine de Cannonball (build Windows / Linux / Pi) |
 
