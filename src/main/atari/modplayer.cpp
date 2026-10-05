@@ -10,6 +10,7 @@
 #include <cstring>
 #include "atari/modplayer.hpp"
 #ifdef __MINT__
+#include <mint/osbind.h>
 #include <mint/cookie.h>
 #endif
 #include "atari/options.hpp"
@@ -108,16 +109,18 @@ static FILE* open_file(const char* filename)
     return f;
 }
 
-// At start-up (mod = 1): looks for the four music files once, so that a missing one costs no
-// disk access when its tune starts.
+// At start-up (mod = 1): looks the four music files up in the directory (nothing is opened or
+// read), so that a missing one costs no disk access when its tune starts. A file that is there
+// is only read when its tune starts.
 void atari_mod_probe()
 {
     for (int n = 1; n <= 4; n++)
     {
         char path[24];
         sprintf(path, "Music\\TRACK%d.MOD", n);
-        FILE* f = open_file(path);
-        if (f) fclose(f);
+#ifdef __MINT__
+        if (Fsfirst(path, 0) != 0 && n_missing < 8) strcpy(missing[n_missing++], path);
+#endif
     }
 }
 
