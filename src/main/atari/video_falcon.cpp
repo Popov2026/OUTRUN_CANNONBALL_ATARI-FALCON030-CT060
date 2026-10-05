@@ -460,6 +460,17 @@ void Render::draw_frame(uint16_t* pixels)
         // above if paused - a one-off, CPU-heavy call (no lookup tables, see screenshot.cpp) that
         // is fine to let stall this one picture since it only ever runs on a manual keypress.
         atari_save_screenshot(dst, S16_WIDTH, S16_HEIGHT, fal_stride);
+#ifdef DUMP_INDEX
+        {
+            // Test aid: the picture's palette indices and the palette (RGB565, 0x2000 entries,
+            // shadowed half last) next to the screenshot, in IXnnnn.BIN.
+            static int n = 0;
+            char name[16];
+            std::sprintf(name, "IX%04d.BIN", ++n);
+            FILE* fp = fopen(name, "wb");
+            if (fp) { fwrite(pixels, 2, S16_WIDTH * S16_HEIGHT, fp); fwrite(rgb565, 2, 2 * S16_PALETTE_ENTRIES, fp); fclose(fp); }
+        }
+#endif
         g_take_screenshot = false;
     }
 #ifdef ROWCHECK

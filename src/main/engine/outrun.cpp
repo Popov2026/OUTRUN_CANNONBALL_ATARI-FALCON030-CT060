@@ -31,6 +31,13 @@
 #include "engine/otraffic.hpp"
 #include "engine/outils.hpp"
 
+#ifdef TEST_STAGE
+// Test aid (-DTEST_STAGE=0x09 for instance): the game starts at that stage, as in time trial.
+#define START_LEVEL (ttrial.level = TEST_STAGE)
+#else
+#define START_LEVEL (cannonball_mode == MODE_TTRIAL ? ttrial.level : 0)
+#endif
+
 Outrun outrun;
 
 /*
@@ -99,7 +106,7 @@ void Outrun::boot()
     config.load_scores(cannonball_mode == Outrun::MODE_ORIGINAL);        
     ostats.init(cannonball_mode == MODE_TTRIAL);
     init_jump_table();
-    oinitengine.init(cannonball_mode == MODE_TTRIAL ? ttrial.level : 0);
+    oinitengine.init(START_LEVEL);
     osoundint.init();
     outils::reset_random_seed(); // Ensure we match the genuine boot up of the original game each time
 }
@@ -443,7 +450,7 @@ void Outrun::main_switch()
             video.clear_text_ram();
             oferrari.car_ctrl_active = true;
             init_jump_table();
-            oinitengine.init(cannonball_mode == MODE_TTRIAL ? ttrial.level : 0);
+            oinitengine.init(START_LEVEL);
             // Timing Hack to ensure horizon is correct
             // Note that the original code disables the screen, and waits for the second CPU's interrupt instead
             oroad.tick();
@@ -623,7 +630,7 @@ void Outrun::main_switch()
                 //ROM:0000B700                 bclr    #5,(ppi1_value).l                   ; Turn screen off (not activated until PPI written to)
                 oferrari.car_ctrl_active = true; // 0 : Allow road updates
                 init_jump_table();
-                oinitengine.init(cannonball_mode == MODE_TTRIAL ? ttrial.level : 0);
+                oinitengine.init(START_LEVEL);
                 //ROM:0000B716                 bclr    #0,(byte_260550).l
                 game_state = GS_REINIT;          // Reinit game to attract mode
             }

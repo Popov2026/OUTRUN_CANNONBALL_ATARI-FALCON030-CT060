@@ -438,7 +438,11 @@ static void main_loop()
 #ifdef AUTOSHOT
         // Test aid (-DAUTOSHOT, with -DAUTOPLAY): saves two pictures of the drive as SHOTnnnn.PNG
         // without anyone at the keyboard, so the display can be looked at outside the emulator.
+#ifdef AUTOPLAY_GRASS
+        if (renders >= 300 && renders % 20 == 0 && renders <= 700) g_take_screenshot = true;
+#else
         if (renders == 170 || renders == 260) g_take_screenshot = true;
+#endif
 #endif
 
         // K for the next pictures: P + K*L must fit in K*TICK_UNITS (10 % margin).

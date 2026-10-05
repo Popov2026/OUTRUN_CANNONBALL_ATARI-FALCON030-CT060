@@ -293,6 +293,10 @@ void Input::poll()
         keys[COIN]  = coin_pulse;
         keys[START] = start_pulse;
         keys[ACCEL] = f > 10;
+#ifdef AUTOPLAY_GRASS
+        // ... and steer off the road, onto the grass
+        keys[LEFT] = f > 700 && (f % 300) < 120;
+#endif
     }
 #endif
 }

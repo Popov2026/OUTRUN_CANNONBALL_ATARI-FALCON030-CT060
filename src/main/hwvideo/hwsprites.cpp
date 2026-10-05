@@ -3,6 +3,7 @@
 #include "globals.hpp"
 #include "frontend/config.hpp"
 #include <cstdlib>
+#include <cstdio>
 #include <cstring>
 #if defined(PLATFORM_ATARI) && (defined(__mc68030__) || defined(__mc68060__))
 static void spr_build(const uint32_t* sprites, uint32_t n);
@@ -211,7 +212,9 @@ extern "C" const uint32_t* atari_sprite_line(SprLine* s);
 #if defined(__mc68030__) || defined(__mc68060__)
 // 68030/68060: the whole row loop of a sprite is in assembly (atari/sprite_asm030.S), driven
 // by this one global description. Field order = the R_* offsets in that file.
+#ifndef SPR_GENERIC   // test aid: -DSPR_GENERIC draws with the original C++ code
 #define ATARI_SPRITE_ROWS 1
+#endif
 struct SprRows
 {
     int32_t y, ytarget, ydelta, yacc, vzoom, addr, pitch;
@@ -301,6 +304,24 @@ void hwsprites::render(const uint8_t priority)
         int32_t xdelta = ((ramBuff[data+4] & 0x2000) != 0) ? 1 : -1;
         int32_t hzoom    = ramBuff[data+4] & 0x7ff;     
         int32_t color   = COLOR_BASE + ((ramBuff[data+5] & 0x7f) << 4);
+#ifdef DUMP_INDEX
+        {
+            // Test aid: the sprites of the screenshot picture, in SPRITES.TXT.
+            extern bool g_take_screenshot;
+            if (g_take_screenshot)
+            {
+                FILE* f = fopen("SPRITES.TXT", "a");
+                if (f)
+                {
+                    fprintf(f, "pri %u top %ld h %ld bank %d addr %04lx pitch %ld x %ld shadow %d vz %03lx hz %03lx col %03lx flip %ld xd %ld yd %ld w %04x %04x %04x %04x %04x %04x %04x\r\n",
+                            (unsigned)priority, (long)top, (long)height, bank, (unsigned long)addr, (long)pitch, (long)xpos, shadow,
+                            (unsigned long)vzoom, (unsigned long)hzoom, (unsigned long)color, (long)flip, (long)xdelta, (long)ydelta,
+                            ramBuff[data], ramBuff[data+1], ramBuff[data+2], ramBuff[data+3], ramBuff[data+4], ramBuff[data+5], ramBuff[data+6]);
+                    fclose(f);
+                }
+            }
+        }
+#endif
         int32_t x, y, ytarget, yacc = 0, pix;
             
         // adjust X coordinate
@@ -388,7 +409,7 @@ void hwsprites::render(const uint8_t priority)
                 uint16_t* pPixel = &video.pixels[y * config.s16_width];
                 int32_t xacc = 0;
 
-#ifdef PLATFORM_ATARI
+#if defined(PLATFORM_ATARI) && !defined(SPR_GENERIC)
                 {
                     SprLine s;
                     s.p       = pPixel + xpos;
@@ -470,7 +491,7 @@ void hwsprites::render(const uint8_t priority)
                             break;
                     }
                 }
-#ifdef PLATFORM_ATARI
+#if defined(PLATFORM_ATARI) && !defined(SPR_GENERIC)
                 }
 #endif
             }
