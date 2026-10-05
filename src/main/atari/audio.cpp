@@ -230,6 +230,7 @@ void Audio::irq_step()
         irq_next = now;
     }
     T_MARK(d0);
+    fm_before_driver();
     osoundint.tick();
 #ifdef AUDIO_TIMING
     g_t_drv += fine_time() - d0;
@@ -306,6 +307,10 @@ void Audio::tick_now()
     // PCM chip's output is delayed by one step too (the music's drums are on the PCM chip).
     static int16_t pcm_late[DMA_BUFFER_SAMPLES * 2];
     static int16_t fm_silence[DMA_BUFFER_SAMPLES * 2];
+    static bool was_on_dsp = false;
+    if (fm_on_dsp && !was_on_dsp)
+        std::memset(pcm_late, 0, sizeof(pcm_late));   // the FM came back to the DSP: no stale PCM step
+    was_on_dsp = fm_on_dsp;
     if (fm_on_dsp)
     {
         T_MARK(f0);
@@ -320,13 +325,19 @@ void Audio::tick_now()
             static uint32_t steps = 0, bad = 0, exact = 0;
             if (have_ref)
             {
-                uint32_t d = 0;
-                for (uint32_t i = 0; i < frames * 2; i++) if ((fm ? fm[i] : 0) != ref[i]) d++;
+                uint32_t d = 0; int32_t dmax = 0, rmax = 0;
+                for (uint32_t i = 0; i < frames * 2; i++)
+                {
+                    const int32_t e = (fm ? fm[i] : 0) - ref[i];
+                    if (e) d++;
+                    if (e > dmax) dmax = e; else if (-e > dmax) dmax = -e;
+                    if (ref[i] > rmax) rmax = ref[i]; else if (-ref[i] > rmax) rmax = -ref[i];
+                }
                 if (d) bad++; else exact++;
-                if (d && bad <= 200)
+                if (d && bad <= 2000)
                 {
                     FILE* f = fopen("VERIFY.TXT", "a");
-                    if (f) { fprintf(f, "step %lu: %lu samples differ\r\n", (unsigned long)steps, (unsigned long)d); fclose(f); }
+                    if (f) { fprintf(f, "step %lu: %lu samples differ, by up to %ld (peak %ld)\r\n", (unsigned long)steps, (unsigned long)d, (long)dmax, (long)rmax); fclose(f); }
                 }
             }
             if (++steps % 300 == 0)

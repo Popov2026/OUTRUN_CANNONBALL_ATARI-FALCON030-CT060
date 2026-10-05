@@ -2307,3 +2307,21 @@ const unsigned int* ym2151_sin_tab() { return sin_tab; }
 const uint8_t*      ym2151_eg_inc()  { return eg_inc; }
 uint32_t            ym2151_eg_timer_add()      { return eg_timer_add; }
 uint32_t            ym2151_eg_timer_overflow() { return eg_timer_overflow; }
+// The voices back to their reset state (all silent, envelope counter at 0), the registers and
+// timers as they are: what the DSP program starts from, so that the two stay in step when it
+// takes the FM sound over in the middle of a game (after a .mod tune).
+void ym2151_reset_voices()
+{
+    for (int i = 0; i < 32; i++)
+    {
+        oper[i].phase = 0;
+        oper[i].state = EG_OFF;
+        oper[i].volume = MAX_ATT_INDEX;
+        oper[i].key = 0;
+        oper[i].fb_out_curr = oper[i].fb_out_prev = 0;
+        oper[i].mem_value = 0;
+    }
+    for (int c = 0; c < 8; c++) chanout[c] = 0;
+    eg_timer = 0;
+    eg_cnt = 0;
+}

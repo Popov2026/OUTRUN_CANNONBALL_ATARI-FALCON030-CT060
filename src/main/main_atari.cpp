@@ -39,6 +39,7 @@ extern "C" long __stksize = 262144L;
 #include "stdint.hpp"
 #include "main.hpp"
 #include "engine/outrun.hpp"
+#include "engine/omusic.hpp"
 #include "engine/oroad.hpp"
 #include "engine/oinitengine.hpp"
 #include "frontend/config.hpp"
@@ -203,7 +204,11 @@ static void tick()
 #endif
                 if (tick_frame) input.frame_done();
 #ifndef NO_SOUND   // -DNO_SOUND also skips the engine's own sound command processing
-                if (!audio.irq_mode()) osoundint.tick();   // else the sound interrupt runs it (atari/audio.cpp)
+                if (!audio.irq_mode()) { audio.fm_before_driver(); osoundint.tick(); }   // else the sound interrupt runs it (atari/audio.cpp)
+#ifdef AUTOPLAY_MUSICSWAP
+                // Test aid: at step 1500, the tune changes to track 1 (FM if Music\TRACK1.MOD is missing).
+                { static uint32_t st = 0; if (++st == 1500) { extern OMusic omusic; omusic.play_music(0); } }
+#endif
 #endif
 #ifdef PERF_PRINT
                 {

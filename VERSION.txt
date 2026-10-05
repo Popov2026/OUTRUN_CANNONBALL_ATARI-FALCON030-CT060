@@ -12,6 +12,12 @@ Changes since v0.31 beta:
     The four files are now only looked up in the directory once, at
     start-up (nothing is read); a .mod that is there is read when its tune
     starts, with the sound running.
+  - From a .mod tune back to an FM one (mod = 1 with only some TRACKn.MOD
+    files): the DSP .mod replay kept running in the background, replaying
+    silence, and the FM music stayed on the 68k. The replay now stops and
+    the FM program takes the DSP back, in step with the 68k's chip (same
+    sound, sample for sample). While a .mod plays, the FM program is
+    stopped (it was already).
 
 Changes in v0.31 beta (since v0.30 beta):
   Picture rate

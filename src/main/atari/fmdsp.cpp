@@ -27,6 +27,7 @@ const unsigned int* ym2151_sin_tab();
 const uint8_t*      ym2151_eg_inc();
 uint32_t ym2151_eg_timer_add();
 uint32_t ym2151_eg_timer_overflow();
+void ym2151_reset_voices();
 
 // DSP host port: status (bit 0 a word to read, bit 1 room to write); a long written at
 // $FFA204 sends its low 24 bits; a word read at $FFA206 takes the low 16 bits of a word.
@@ -102,6 +103,7 @@ bool FmDsp::start()
         broken = true;
         return false;
     }
+    ym2151_reset_voices();   // the DSP program starts with every voice silent
     prev_frames = 0;
     full_sync = true;
     dirty_ops = 0xffffffff;

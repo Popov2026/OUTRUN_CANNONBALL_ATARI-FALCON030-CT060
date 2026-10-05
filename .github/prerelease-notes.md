@@ -11,6 +11,8 @@ optionally your `.mod` files in `Music/` (see the README).
   held off; without the file (FM music), that lookup on a real hard disk or card was long enough to break up
   the sound. The four files are now only looked up in the directory once at start-up (nothing is read), and a
   `.mod` that is there is read when its tune starts, with the sound running.
+- **From a `.mod` tune back to an FM one** (only some `TRACKn.MOD` files): the DSP `.mod` replay no longer keeps
+  running in the background, and the FM music goes back on the DSP (it stayed on the 68k).
 
 ### v0.31 beta — faster pictures, steadier picture rate (what's new since v0.30 beta)
 - **`fps` option**: a steady picture rate between the cadences, e.g. `fps = 25` or `fps = 20` (replaces
@@ -69,6 +71,8 @@ et éventuellement tes `.mod` dans `Music/` (voir le README).
   était bloqué ; sans le fichier (musique FM), cette recherche sur un vrai disque ou une carte durait assez pour
   hacher le son. Les quatre fichiers sont maintenant seulement cherchés dans le répertoire, une fois au
   démarrage (rien n'est lu), et un `.mod` présent est lu quand sa musique démarre, sans couper le son.
+- **D'une musique `.mod` à une musique FM** (seulement certains `TRACKn.MOD`) : le replay `.mod` du DSP ne tourne
+  plus en arrière-plan, et la musique FM repasse sur le DSP (elle restait sur le 68k).
 
 ### v0.31 bêta — images plus rapides, cadence plus stable (nouveautés depuis la v0.30 bêta)
 - **Option `fps`** : un nombre d'images par seconde fixe entre les cadences, par ex. `fps = 25` ou `fps = 20`

@@ -61,6 +61,9 @@ public:
     void tick_muted();   // keep chip timers/flags moving without synthesising or playing audio
     void irq_step();     // from the sound interrupt (see audio.cpp): one step when needed
     bool irq_mode() const { return irq_on; }
+    // Before the sound driver's step: the FM program is (re)started on the DSP if it is free, so
+    // that it hears the register writes of that step (a tune starting).
+    void fm_before_driver() { if (sound_enabled) use_fmdsp(); }
     void service();      // start the queued buffer as soon as the DMA has finished the current one
     void start_audio();
     void stop_audio();

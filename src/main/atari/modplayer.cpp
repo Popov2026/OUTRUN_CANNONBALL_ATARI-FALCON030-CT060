@@ -158,9 +158,12 @@ bool ModPlayer::load_now(uint8_t* raw, long fsize, uint32_t mix_rate)
 
     if (!raw)
     {
-        // No .mod for this track: FM music through the normal DMA path, so DSPMOD (mod_dsp = 2)
-        // must give the DAC back.
-        if (atari_opt.mod_dsp == 2) { dspmod.shutdown(); dsp_replay.stop(); }
+        // No .mod for this track: FM music through the normal DMA path, so a DSP replay still
+        // running from an earlier track (mod_dsp = 1 or 2) gives the DSP and the DAC back - it
+        // would otherwise go on replaying silence, and keep the FM music on the 68k. The FM
+        // program goes back on the DSP at the next sound step (Audio::fm_before_driver()).
+        dspmod.shutdown();
+        dsp_replay.stop();
         return false;
     }
 
