@@ -1,8 +1,19 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.32 beta
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.33 beta
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
-Changes since v0.31 beta:
+Changes since v0.32 beta:
+  Sound
+  - Starting a .mod (radio screen, race start) no longer breaks up the
+    sound: the module used to be made ready with the sound held off (every
+    sample converted to 16 bits, unused by the DSP replay, then again for
+    the DSP replay). It is now made ready with the sound running, straight
+    into the form its replay uses (bytes for the DSP, 16 bits only for the
+    68k's mixer); the sound is only held off to swap the tunes and start
+    the DSP replay (Hatari, 68060: 15 ms). Same sound, and less memory with
+    the DSP replay.
+
+Changes in v0.32 beta (since v0.31 beta):
   Sound
   - Start of the tunes no longer broken up on real machines: with mod = 1
     (the default outrun.ini) every tune start looked for Music\TRACKn.MOD on

@@ -1,11 +1,17 @@
 **English** | [Français](#français)
 
-## v0.32 beta — clean start of the music on real machines
+## v0.33 beta — clean start of the `.mod` music
 
 No ROMs and no `.mod` music are included: add your own ROM set (OutRun revision B) in `roms/`, and
 optionally your `.mod` files in `Music/` (see the README).
 
-### What's new since v0.31 beta
+### What's new since v0.32 beta
+- **Starting a `.mod` no longer breaks up the sound** (radio screen, race start). The module used to be made
+  ready with the sound held off (every sample converted to 16 bits — unused by the DSP replay — then again for
+  the DSP). It is now made ready with the sound running, straight into the form its replay uses; the sound is
+  only held off to swap the tunes and start the DSP replay. Same sound, and less memory with the DSP replay.
+
+### v0.32 beta — clean start of the music on real machines (what's new since v0.31 beta)
 - **The start of each tune is no longer broken up on real machines** (heard on a real CT60). With `mod = 1`
   (the default `outrun.ini`), every tune start looked for `Music\TRACKn.MOD` on the disk while the sound was
   held off; without the file (FM music), that lookup on a real hard disk or card was long enough to break up
@@ -60,12 +66,19 @@ Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatar
 
 ## Français
 
-## v0.32 bêta — début des musiques propre sur vraie machine
+## v0.33 bêta — début des musiques `.mod` propre
 
 Aucune ROM ni musique `.mod` n'est incluse : ajoute ton propre jeu de ROMs (OutRun révision B) dans `roms/`,
 et éventuellement tes `.mod` dans `Music/` (voir le README).
 
-### Nouveautés depuis la v0.31 bêta
+### Nouveautés depuis la v0.32 bêta
+- **Le lancement d'un `.mod` ne hache plus le son** (écran de l'autoradio, départ de la course). Le module était
+  préparé pendant que le son était bloqué (tous les samples convertis en 16 bits — inutiles pour le replay DSP —
+  puis encore pour le DSP). Il est maintenant préparé son en marche, directement sous la forme qu'utilise son
+  replay ; le son n'est bloqué que pour changer de morceau et lancer le replay DSP. Même son, et moins de
+  mémoire avec le replay DSP.
+
+### v0.32 bêta — début des musiques propre sur vraie machine (nouveautés depuis la v0.31 bêta)
 - **Le début des musiques n'est plus haché sur vraie machine** (constaté sur un vrai CT60). Avec `mod = 1`
   (le `outrun.ini` livré), chaque début de musique cherchait `Music\TRACKn.MOD` sur le disque pendant que le son
   était bloqué ; sans le fichier (musique FM), cette recherche sur un vrai disque ou une carte durait assez pour

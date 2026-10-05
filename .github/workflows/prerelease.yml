@@ -9,7 +9,7 @@ on:
       version:
         description: 'Tag of the test version (e.g. v0.28-alpha)'
         required: true
-        default: 'v0.32-beta'
+        default: 'v0.33-beta'
 
 permissions:
   contents: write

@@ -1,4 +1,4 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.32 beta (compiled release)
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.33 beta (compiled release)
 See VERSION.txt at the root of the repository for the changelog.
 
 CB030.TOS - original Falcon 030 (68030 @ 16 MHz): runs, but too slow to be really playable
