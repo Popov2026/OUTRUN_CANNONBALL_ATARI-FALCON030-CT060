@@ -643,6 +643,11 @@ int main(int argc, char* argv[])
     printf("DEBUG C: after config.load()%c%c", 13, 10);
 #endif
     atari_load_options("outrun.ini");   // optional: shadows, scenery, cadence, sound (see atari/options.hpp)
+    if (atari_opt.mod)
+    {
+        void atari_mod_probe();   // atari/modplayer.cpp
+        atari_mod_probe();        // the Music\TRACKn.MOD files are looked for now, not when a tune starts
+    }
 #ifdef STARTUP_DEBUG
     printf("DEBUG D: after atari_load_options%c%c", 13, 10);
 #endif

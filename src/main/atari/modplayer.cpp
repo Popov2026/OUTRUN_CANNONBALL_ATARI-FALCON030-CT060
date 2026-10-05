@@ -96,18 +96,35 @@ static inline uint16_t rd16(const uint8_t* p) { return (uint16_t)((p[0] << 8) | 
 // which are interleaved in the header but not in the body). 0 if it is missing or too small.
 // A file found missing is not looked for again: on a real machine's hard disk or card, looking
 // for it takes long enough to be heard, at every start of a tune.
-static uint8_t* read_file(const char* filename, long* size)
+static char missing[8][24];
+static int n_missing = 0;
+
+static FILE* open_file(const char* filename)
 {
-    static char missing[8][24];
-    static int n_missing = 0;
     for (int i = 0; i < n_missing; i++)
         if (!strcmp(missing[i], filename)) return 0;
     FILE* f = fopen(filename, "rb");
-    if (!f)
+    if (!f && n_missing < 8 && strlen(filename) < sizeof(missing[0])) strcpy(missing[n_missing++], filename);
+    return f;
+}
+
+// At start-up (mod = 1): looks for the four music files once, so that a missing one costs no
+// disk access when its tune starts.
+void atari_mod_probe()
+{
+    for (int n = 1; n <= 4; n++)
     {
-        if (n_missing < 8 && strlen(filename) < sizeof(missing[0])) strcpy(missing[n_missing++], filename);
-        return 0;
+        char path[24];
+        sprintf(path, "Music\\TRACK%d.MOD", n);
+        FILE* f = open_file(path);
+        if (f) fclose(f);
     }
+}
+
+static uint8_t* read_file(const char* filename, long* size)
+{
+    FILE* f = open_file(filename);
+    if (!f) return 0;
     fseek(f, 0, SEEK_END);
     long fsize = ftell(f);
     fseek(f, 0, SEEK_SET);
