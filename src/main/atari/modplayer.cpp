@@ -140,19 +140,78 @@ static uint8_t* read_file(const char* filename, long* size)
     return raw;
 }
 
-bool ModPlayer::load(const char* filename, uint32_t mix_rate)
+// mod_dsp = 2 plays with the Simplet DSP replay instead of DSPMOD:
+// - modules with more than 64 patterns ("M!K!", e.g. Passing Breeze and Splash Wave as
+//   covered by Reassembler): DSPMOD hangs on them;
+// - with a 68040/68060: DSPMOD 3.4 was written for the 68030. It writes to the DSP host port
+//   without waiting for it to be ready (a few nops between words), so a faster processor
+//   loses words and the DSP waits forever (the game froze in Hatari's 68060), and it uses a
+//   64-bit mulu.l, which a 68060 only has through a slow trap (the game ran slower).
+static bool use_simplet(const uint8_t* raw, long fsize)
 {
-    // The file is read with the sound running: disk access can take a while on a real machine.
-    long fsize = 0;
-    uint8_t* raw = read_file(filename, &fsize);
-    atari_sound_lock();
-    const bool ok = load_now(raw, fsize, mix_rate);
-    atari_sound_unlock();
-    return ok;
+    if (atari_opt.mod_dsp != 2 || fsize < 1084) return false;
+    int last = 0;
+    for (int i = 0; i < 128; i++) if (raw[952 + i] > last) last = raw[952 + i];
+    long cpu = 0;
+#ifdef __MINT__
+    Getcookie(C__CPU, &cpu);
+#endif
+    return last >= 64 || cpu >= 40;
 }
 
-// Takes over raw (the file, or 0 if there is none).
-bool ModPlayer::load_now(uint8_t* raw, long fsize, uint32_t mix_rate)
+bool ModPlayer::load(const char* filename, uint32_t mix_rate)
+{
+    // Everything that takes time is done with the sound running: reading the file (disk access
+    // can take a while on a real machine) and making the samples ready for the replay. The
+    // sound is only held off to swap the songs and hand the DSP over.
+    long fsize = 0;
+    uint8_t* raw = read_file(filename, &fsize);
+    const bool simplet = raw && use_simplet(raw, fsize);
+    if (!raw || (atari_opt.mod_dsp == 2 && fsize >= 1084 && !simplet))
+    {
+        // no file, or DSPMOD (it plays the file as it is)
+        atari_sound_lock();
+        const bool ok = load_now(raw, fsize, mix_rate, simplet);
+        atari_sound_unlock();
+        return ok;
+    }
+#ifdef MOD_MUSIC_LOG
+    extern uint32_t atari_fine_time();
+    const uint32_t tp = atari_fine_time();
+#endif
+    Song* s = new Song;
+    const bool parsed = parse(raw, fsize, (atari_opt.mod_dsp == 1 || simplet), *s);   // frees raw
+#ifdef MOD_MUSIC_LOG
+    const uint32_t t0 = atari_fine_time();
+#endif
+    atari_sound_lock();
+    unload_now();
+    if (parsed) install_now(*s, mix_rate, simplet);
+    else { dspmod.shutdown(); dsp_replay.stop(); }   // not a module: the FM music, as for no file
+    atari_sound_unlock();
+#ifdef MOD_MUSIC_LOG
+    { FILE* lf = fopen("MODLOG.TXT", "a"); if (lf) { fprintf(lf, "prepared with the sound running %lu us, sound held off %lu us\r\n", (unsigned long)((t0 - tp) * 26), (unsigned long)((atari_fine_time() - t0) * 26)); fclose(lf); } }
+#endif
+    if (!parsed) free_song(*s);
+    delete s;
+#ifdef MOD_MUSIC_LOG
+    // Test aid: confirms the parse succeeded and dumps the header fields, in MODLOG.TXT.
+    if (parsed)
+    {
+        FILE* lf = fopen("MODLOG.TXT", "a");
+        if (lf)
+        {
+            fprintf(lf, "MOD load OK: %s channels=%d samples=%d song_len=%d patterns=%d rate=%lu dsp=%d\r\n",
+                    filename, num_channels, num_samples, song_length, num_patterns, (unsigned long)mix_rate, (int)dsp_mode);
+            fclose(lf);
+        }
+    }
+#endif
+    return parsed;
+}
+
+// Takes over raw (the file, or 0 if there is none). With the sound held off.
+bool ModPlayer::load_now(uint8_t* raw, long fsize, uint32_t mix_rate, bool simplet)
 {
     unload_now();
 
@@ -169,24 +228,6 @@ bool ModPlayer::load_now(uint8_t* raw, long fsize, uint32_t mix_rate)
 
     // mod_dsp = 2: DSPMOD plays the file as it is (it interprets the patterns itself and streams
     // the samples to its DSP program). Modules it does not take fall back to the parser below.
-    // mod_dsp = 2 plays with the Simplet DSP replay instead of DSPMOD:
-    // - modules with more than 64 patterns ("M!K!", e.g. Passing Breeze and Splash Wave as
-    //   covered by Reassembler): DSPMOD hangs on them;
-    // - with a 68040/68060: DSPMOD 3.4 was written for the 68030. It writes to the DSP host port
-    //   without waiting for it to be ready (a few nops between words), so a faster processor
-    //   loses words and the DSP waits forever (the game froze in Hatari's 68060), and it uses a
-    //   64-bit mulu.l, which a 68060 only has through a slow trap (the game ran slower).
-    bool simplet = false;
-    if (atari_opt.mod_dsp == 2 && fsize >= 1084)
-    {
-        int last = 0;
-        for (int i = 0; i < 128; i++) if (raw[952 + i] > last) last = raw[952 + i];
-        long cpu = 0;
-#ifdef __MINT__
-        Getcookie(C__CPU, &cpu);
-#endif
-        simplet = last >= 64 || cpu >= 40;
-    }
     if (atari_opt.mod_dsp == 2 && fsize >= 1084 && !simplet)
     {
         dsp_replay.stop();   // the previous track may have been a Simplet one
@@ -199,11 +240,26 @@ bool ModPlayer::load_now(uint8_t* raw, long fsize, uint32_t mix_rate)
         }
         dspmod.shutdown();
     }
+    Song s;
+    if (!parse(raw, fsize, false, s)) return false;
+    install_now(s, mix_rate, simplet);
+    return true;
+}
+
+// Reads the module in raw (freed here) into s. With `dsp`, the samples are made ready for the
+// DSP replay (data8: the bytes followed by DSP_PAD bytes of what plays next, the loop again or
+// silence, so the interrupt can hand the DSP one frame's worth in a single run); otherwise for
+// mix() (data: sign-extended to 16 bits once here, so mix() is a plain lookup). The DSP replay
+// takes 4-channel modules only. False if it is not a module (nothing is left allocated).
+bool ModPlayer::parse(uint8_t* raw, long fsize, bool dsp, Song& s)
+{
+    for (int i = 0; i < MAX_SAMPLES; i++) { s.samples[i].data = 0; s.samples[i].data8 = 0; s.samples[i].length = 0; s.samples[i].loop_length = 0; }
+    s.patterns = 0;
 
     // Detect the header variant via the magic id at offset 1080 (present
     // only in the newer 31-sample layout).
     bool has_magic = false;
-    num_channels = 4;
+    s.num_channels = 4;
     if (fsize >= 1084)
     {
         const uint8_t* tag = raw + 1080;
@@ -211,78 +267,114 @@ bool ModPlayer::load_now(uint8_t* raw, long fsize, uint32_t mix_rate)
             {"M.K.",4},{"M!K!",4},{"FLT4",4},{"4CHN",4},{"6CHN",6},{"8CHN",8},{"FLT8",8}
         };
         for (size_t i = 0; i < sizeof(tags)/sizeof(tags[0]); i++)
-            if (memcmp(tag, tags[i].id, 4) == 0) { has_magic = true; num_channels = tags[i].ch; break; }
+            if (memcmp(tag, tags[i].id, 4) == 0) { has_magic = true; s.num_channels = tags[i].ch; break; }
     }
-    if (num_channels > MAX_CHANNELS) num_channels = MAX_CHANNELS;
+    if (s.num_channels > MAX_CHANNELS) s.num_channels = MAX_CHANNELS;
+    s.dsp = dsp && s.num_channels <= 4;
 
-    num_samples = has_magic ? 31 : 15;
+    s.num_samples = has_magic ? 31 : 15;
 
     // Sample headers: 20-byte title, then num_samples * 30-byte entries.
     long off = 20;
-    for (int i = 0; i < num_samples; i++)
+    for (int i = 0; i < s.num_samples; i++)
     {
-        const uint8_t* s = raw + off;
-        uint32_t len_words    = rd16(s + 22);
-        int8_t   finetune_raw = (int8_t)(s[24] & 0x0F);
+        const uint8_t* h = raw + off;
+        uint32_t len_words    = rd16(h + 22);
+        int8_t   finetune_raw = (int8_t)(h[24] & 0x0F);
         if (finetune_raw > 7) finetune_raw -= 16;   // 4-bit signed, stored 0..15
-        uint8_t  volume        = s[25];
-        uint32_t loop_start_w  = rd16(s + 26);
-        uint32_t loop_len_w    = rd16(s + 28);
+        uint8_t  volume        = h[25];
+        uint32_t loop_start_w  = rd16(h + 26);
+        uint32_t loop_len_w    = rd16(h + 28);
 
-        samples[i].length      = len_words * 2;
-        samples[i].finetune    = finetune_raw;
-        samples[i].volume      = volume > 64 ? 64 : volume;
-        samples[i].loop_start  = loop_start_w * 2;
-        samples[i].loop_length = loop_len_w * 2;
-        samples[i].data        = 0;   // filled in below, once the pattern block's size is known
-        samples[i].data8       = 0;
+        s.samples[i].length      = len_words * 2;
+        s.samples[i].finetune    = finetune_raw;
+        s.samples[i].volume      = volume > 64 ? 64 : volume;
+        s.samples[i].loop_start  = loop_start_w * 2;
+        s.samples[i].loop_length = loop_len_w * 2;
         off += 30;
     }
-    for (int i = num_samples; i < MAX_SAMPLES; i++) { samples[i].length = 0; samples[i].loop_length = 0; }
 
-    song_length = raw[off]; off++;
+    s.song_length = raw[off]; off++;
     off++;   // restart position byte (NoiseTracker-era field) - not used
-    for (int i = 0; i < MAX_ORDERS; i++) order[i] = raw[off + i];
+    for (int i = 0; i < MAX_ORDERS; i++) s.order[i] = raw[off + i];
     off += MAX_ORDERS;
     if (has_magic) off += 4;   // magic id already read above
 
-    num_patterns = 0;
-    for (int i = 0; i < song_length && i < MAX_ORDERS; i++)
-        if (order[i] + 1 > num_patterns) num_patterns = order[i] + 1;
-    if (num_patterns > MAX_PATTERNS) num_patterns = MAX_PATTERNS;
-    if (num_patterns < 1) num_patterns = 1;
+    s.num_patterns = 0;
+    for (int i = 0; i < s.song_length && i < MAX_ORDERS; i++)
+        if (s.order[i] + 1 > s.num_patterns) s.num_patterns = s.order[i] + 1;
+    if (s.num_patterns > MAX_PATTERNS) s.num_patterns = MAX_PATTERNS;
+    if (s.num_patterns < 1) s.num_patterns = 1;
 
-    long pattern_bytes = (long)num_patterns * 64 * num_channels * 4;
+    long pattern_bytes = (long)s.num_patterns * 64 * s.num_channels * 4;
     if (off + pattern_bytes > fsize) { delete[] raw; return false; }   // truncated/unrecognised file
 
-    patterns = new uint8_t[num_patterns][64][MAX_CHANNELS][4];
-    memset(patterns, 0, (size_t)num_patterns * 64 * MAX_CHANNELS * 4);
-    for (int p = 0; p < num_patterns; p++)
+    s.patterns = new uint8_t[s.num_patterns][64][MAX_CHANNELS][4];
+    memset(s.patterns, 0, (size_t)s.num_patterns * 64 * MAX_CHANNELS * 4);
+    for (int p = 0; p < s.num_patterns; p++)
         for (int row = 0; row < 64; row++)
-            for (int ch = 0; ch < num_channels; ch++)
+            for (int ch = 0; ch < s.num_channels; ch++)
             {
                 const uint8_t* e = raw + off;
-                patterns[p][row][ch][0] = e[0]; patterns[p][row][ch][1] = e[1];
-                patterns[p][row][ch][2] = e[2]; patterns[p][row][ch][3] = e[3];
+                s.patterns[p][row][ch][0] = e[0]; s.patterns[p][row][ch][1] = e[1];
+                s.patterns[p][row][ch][2] = e[2]; s.patterns[p][row][ch][3] = e[3];
                 off += 4;
             }
 
     // Sample PCM data follows the pattern block, one sample's worth after another,
-    // in the same order as the sample headers. Stored signed 8-bit; sign-extend to
-    // 16-bit once here so mix() is a plain lookup with no per-sample conversion.
-    for (int i = 0; i < num_samples; i++)
+    // in the same order as the sample headers, signed 8-bit.
+    for (int i = 0; i < s.num_samples; i++)
     {
-        uint32_t len = samples[i].length;
+        Sample& sm = s.samples[i];
+        uint32_t len = sm.length;
         if (len == 0) continue;
         if (off + (long)len > fsize) len = (fsize > off) ? (uint32_t)(fsize - off) : 0;
-        samples[i].data = new int16_t[len ? len : 1];
-        for (uint32_t j = 0; j < len; j++)
-            samples[i].data[j] = (int16_t)((int8_t)raw[off + j]) << 6;   // scale 8-bit source up, headroom for volume/mixing
-        off += samples[i].length;
-        samples[i].length = len;   // clamp to what was actually present
+        const int8_t* src = (const int8_t*)raw + off;
+        off += sm.length;
+        sm.length = len;   // clamp to what was actually present
+        if (s.dsp)
+        {
+            if (len == 0) continue;
+            sm.data8 = new int8_t[len + DSP_PAD];
+            memcpy(sm.data8, src, len);
+            const bool looped = sm.loop_length > 1 && sm.loop_start < len;
+            for (uint32_t j = 0; j < DSP_PAD; j++)
+            {
+                uint32_t from = sm.loop_start + (len - sm.loop_start + j) % (looped ? sm.loop_length : 1);
+                sm.data8[len + j] = (looped && from < len) ? sm.data8[from] : 0;
+            }
+        }
+        else
+        {
+            sm.data = new int16_t[len ? len : 1];
+            for (uint32_t j = 0; j < len; j++)
+                sm.data[j] = (int16_t)src[j] << 6;   // scale 8-bit source up, headroom for volume/mixing
+        }
     }
 
     delete[] raw;
+    return true;
+}
+
+// Frees what parse() allocated (a song that was not installed).
+void ModPlayer::free_song(Song& s)
+{
+    for (int i = 0; i < MAX_SAMPLES; i++) { delete[] s.samples[i].data; delete[] s.samples[i].data8; }
+    delete[] s.patterns;
+    s.patterns = 0;
+}
+
+// Makes s the current song (the player is empty) and starts it. With the sound held off.
+void ModPlayer::install_now(Song& s, uint32_t mix_rate, bool simplet)
+{
+    for (int i = 0; i < MAX_SAMPLES; i++) samples[i] = s.samples[i];
+    num_samples = s.num_samples;
+    for (int i = 0; i < MAX_ORDERS; i++) order[i] = s.order[i];
+    song_length = s.song_length;
+    num_channels = s.num_channels;
+    num_patterns = s.num_patterns;
+    patterns = s.patterns;
+    s.patterns = 0;
 
     out_rate = mix_rate;
     for (int c = 0; c < MAX_CHANNELS; c++)
@@ -298,50 +390,30 @@ bool ModPlayer::load_now(uint8_t* raw, long fsize, uint32_t mix_rate)
 
     song_loaded = true;
 
-    // DSP replay (atari_opt.mod_dsp, see dsp_replay.hpp): 4-channel modules only. Each sample
-    // gets a byte copy followed by DSP_PAD bytes of whatever plays next (the loop again, or
-    // silence), so the interrupt can hand the DSP one frame's worth in a single run.
+    // DSP replay (atari_opt.mod_dsp, see dsp_replay.hpp)
     dsp_mode = false;
     dsp_tempo_acc = 0;
-    if (simplet) dspmod.shutdown();   // DSPMOD may still hold the DSP and Timer A
-    if ((atari_opt.mod_dsp == 1 || simplet) && num_channels <= 4)
-        fmdsp.stop();   // the DSP goes to the replay (the FM sound back to the 68k meanwhile)
-    if ((atari_opt.mod_dsp == 1 || simplet) && num_channels <= 4 && dsp_replay.start())
+    if (s.dsp)
     {
-        for (int i = 0; i < num_samples; i++)
-        {
-            Sample& sm = samples[i];
-            if (sm.length == 0 || !sm.data) continue;
-            sm.data8 = new int8_t[sm.length + DSP_PAD];
-            for (uint32_t j = 0; j < sm.length; j++)
-                sm.data8[j] = (int8_t)(sm.data[j] >> 6);
-            const bool looped = sm.loop_length > 1 && sm.loop_start < sm.length;
-            for (uint32_t j = 0; j < DSP_PAD; j++)
+        if (simplet) dspmod.shutdown();   // DSPMOD may still hold the DSP and Timer A
+        fmdsp.stop();   // the DSP goes to the replay (the FM sound back to the 68k meanwhile)
+        if (dsp_replay.start())
+            dsp_mode = true;
+        else
+            for (int i = 0; i < num_samples; i++)
             {
-                uint32_t src = sm.loop_start + (sm.length - sm.loop_start + j) % (looped ? sm.loop_length : 1);
-                sm.data8[sm.length + j] = (looped && src < sm.length) ? sm.data8[src] : 0;
+                // no DSP after all: mixed by the 68k, from 16-bit samples
+                Sample& sm = samples[i];
+                if (!sm.data8) continue;
+                sm.data = new int16_t[sm.length ? sm.length : 1];
+                for (uint32_t j = 0; j < sm.length; j++) sm.data[j] = (int16_t)sm.data8[j] << 6;
+                delete[] sm.data8;
+                sm.data8 = 0;
             }
-        }
-        dsp_mode = true;
     }
 
     restart();
     dsp_ready = dsp_mode;
-#ifdef MOD_MUSIC_LOG
-    // Test aid: confirms the parse succeeded and dumps the header fields, written to a plain
-    // file (see hwaudio/segapcm.cpp's PCM_MEASURE_FILE comment for why - console output was not
-    // reliably captured this session).
-    {
-        FILE* lf = fopen("MODLOG.TXT", "a");
-        if (lf)
-        {
-            fprintf(lf, "MOD load OK: %s channels=%d samples=%d song_len=%d patterns=%d rate=%lu\r\n",
-                    filename, num_channels, num_samples, song_length, num_patterns, (unsigned long)mix_rate);
-            fclose(lf);
-        }
-    }
-#endif
-    return true;
 }
 
 // Back to the first row of the song, default speed (6 ticks per row) and tempo (125).

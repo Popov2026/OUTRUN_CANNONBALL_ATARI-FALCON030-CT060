@@ -77,8 +77,12 @@ public:
     void dsp_tick();
 
 private:
-    bool load_now(uint8_t* raw, long fsize, uint32_t mix_rate);
+    struct Song;
+    bool load_now(uint8_t* raw, long fsize, uint32_t mix_rate, bool simplet);
     void unload_now();
+    bool parse(uint8_t* raw, long fsize, bool dsp, Song& s);
+    void install_now(Song& s, uint32_t mix_rate, bool simplet);
+    static void free_song(Song& s);
     static const int MAX_SAMPLES = 31;
     static const int MAX_PATTERNS = 128;
     static const int MAX_ORDERS = 128;
@@ -121,6 +125,16 @@ private:
     // pattern data: [pattern][row][channel] -> 4 raw bytes, kept exactly as stored
     // in the file (period hi/lo, sample hi/lo, effect, param - see .cpp for decode).
     uint8_t (*patterns)[64][MAX_CHANNELS][4];
+
+    // A song read by parse(), not playing yet (see load()).
+    struct Song
+    {
+        Sample  samples[MAX_SAMPLES];
+        int     num_samples, song_length, num_channels, num_patterns;
+        uint8_t order[MAX_ORDERS];
+        uint8_t (*patterns)[64][MAX_CHANNELS][4];
+        bool    dsp;   // the samples are ready for the DSP replay (data8), not for mix() (data)
+    };
 
     Channel channels[MAX_CHANNELS];
     bool    song_loaded;
