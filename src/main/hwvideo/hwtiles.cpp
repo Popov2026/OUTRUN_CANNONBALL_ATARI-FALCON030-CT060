@@ -6,6 +6,29 @@
 #include "frontend/config.hpp"
 #include <cstring>
 
+#if defined(PLATFORM_FALCON) && !defined(LOWRES) && !defined(TILE_NODEC)
+// Tiles unpacked for atari/tile_asm.S (tiles_dec_*): one 16-bit word per pixel (0..7), and per tile
+// row a flag: 0 = all transparent, 1 = some transparent pixels, 0x80 = no transparent pixel. An
+// opaque row is then drawn 2 pixels at a time without testing each one. 1 MB + 64 KB; without the
+// memory the packed tiles are drawn as before.
+#include <cstdlib>
+#define TILE_DEC 1
+static uint16_t* tdec = 0;
+static uint8_t*  tflg = 0;
+static void tdec_row(const uint32_t* tiles, uint32_t i)
+{
+    const uint32_t w = tiles[i];
+    uint8_t f = 0x80;
+    for (int j = 0; j < 8; j++)
+    {
+        const uint16_t px = (uint16_t)((w >> (28 - 4 * j)) & 15);
+        tdec[i * 8 + j] = px;
+        if (!px) f = 1;
+    }
+    tflg[i] = w ? f : 0;
+}
+#endif
+
 /***************************************************************************
     Video Emulation: OutRun Tilemap Hardware.
     Based on MAME source code.
@@ -112,6 +135,16 @@ void hwtiles::init(uint8_t* src_tiles, const bool hires)
             tiles[i] = val; // Store converted value
         }
         memcpy(tiles_backup, tiles, TILES_LENGTH * sizeof(uint32_t));
+#ifdef TILE_DEC
+        if (!tdec)
+        {
+            tdec = (uint16_t*)std::malloc(TILES_LENGTH * 16);
+            tflg = (uint8_t*)std::malloc(TILES_LENGTH);
+            if (!tdec || !tflg) { std::free(tdec); std::free(tflg); tdec = 0; tflg = 0; }
+        }
+        if (tdec)
+            for (int i = 0; i < TILES_LENGTH; i++) tdec_row(tiles, i);
+#endif
     }
     
 #ifdef LOWRES
@@ -151,6 +184,10 @@ void hwtiles::patch_tiles(RomLoader* patch)
         tiles[tile_index++] = patch->read32(&i);
         tiles[tile_index++] = patch->read32(&i);
         tiles[tile_index++] = patch->read32(&i);
+#ifdef TILE_DEC
+        if (tdec)
+            for (uint32_t r = tile_index - 8; r < tile_index; r++) tdec_row(tiles, r);
+#endif
     }
 #ifdef LOWRES
     build_half_tiles();
@@ -159,6 +196,11 @@ void hwtiles::patch_tiles(RomLoader* patch)
 
 void hwtiles::restore_tiles()
 {
+#ifdef TILE_DEC
+    if (tdec)
+        for (int i = 0; i < TILES_LENGTH; i++)
+            if (tiles[i] != tiles_backup[i]) { tiles[i] = tiles_backup[i]; tdec_row(tiles, i); }
+#endif
     memcpy(tiles, tiles_backup, TILES_LENGTH * sizeof(uint32_t));
 #ifdef LOWRES
     build_half_tiles();
@@ -229,6 +271,20 @@ extern "C" void atari_tile8_mask(uint16_t* buf, const uint32_t* tile, uint32_t p
 extern "C" void atari_tile8_clip(uint16_t* buf, const uint32_t* tile, uint32_t palette, uint32_t stride_bytes,
                                  int32_t x, int32_t y, int32_t width, int32_t height);
 typedef uint16_t __attribute__((may_alias)) u16_alias;
+extern "C" void atari_tile8d(uint16_t* buf, const uint16_t* dec, const uint8_t* flg, uint32_t palette, uint32_t stride_bytes);
+extern "C" void atari_tile8d_mask(uint16_t* buf, const uint16_t* dec, const uint8_t* flg, uint32_t palette, uint32_t stride_bytes,
+                                  uint32_t rows);
+#ifdef TILE_DEC
+// Full tile: the unpacked tiles when they exist.
+#define TILE8(b, code, pal, stride) \
+    (tdec ? atari_tile8d(b, tdec + ((code) << 6), tflg + ((code) << 3), pal, stride) : atari_tile8(b, tiles + ((code) << 3), pal, stride))
+#define TILE8M(b, code, pal, stride, m) \
+    (tdec ? atari_tile8d_mask(b, tdec + ((code) << 6), tflg + ((code) << 3), pal, stride, m) \
+          : atari_tile8_mask(b, tiles + ((code) << 3), pal, stride, m))
+#else
+#define TILE8(b, code, pal, stride)     atari_tile8(b, tiles + ((code) << 3), pal, stride)
+#define TILE8M(b, code, pal, stride, m) atari_tile8_mask(b, tiles + ((code) << 3), pal, stride, m)
+#endif
 
 void hwtiles::render_tile_layer(uint16_t* buf, uint8_t page_index, uint8_t priority_draw)
 {
@@ -331,9 +387,9 @@ void hwtiles::render_tile_layer(uint16_t* buf, uint8_t page_index, uint8_t prior
             {
                 const uint32_t m = g_tile_mask8[y];
                 if (m == 0xFF)
-                    atari_tile8(row + x, tiles + (Code << 3), (uint32_t)Colour << 3, W * 2);
+                    TILE8(row + x, Code, (uint32_t)Colour << 3, W * 2);
                 else if (m)
-                    atari_tile8_mask(row + x, tiles + (Code << 3), (uint32_t)Colour << 3, W * 2, m);
+                    TILE8M(row + x, Code, (uint32_t)Colour << 3, W * 2, m);
             }
             else
                 atari_tile8_clip(buf, tiles + (Code << 3), (uint32_t)Colour << 3, W * 2, x, y, W, S16_HEIGHT);
@@ -385,9 +441,9 @@ void hwtiles::render_text_layer(uint16_t* buf, uint8_t priority_draw)
                 {
                     const uint32_t m = g_row_mask8[y];
                     if (m == 0xFF)
-                        atari_tile8(buf + y * W + x + config.s16_x_off, tiles + (Code << 3), (uint32_t)Colour << 3, W * 2);
+                        TILE8(buf + y * W + x + config.s16_x_off, Code, (uint32_t)Colour << 3, W * 2);
                     else if (m)
-                        atari_tile8_mask(buf + y * W + x + config.s16_x_off, tiles + (Code << 3), (uint32_t)Colour << 3, W * 2, m);
+                        TILE8M(buf + y * W + x + config.s16_x_off, Code, (uint32_t)Colour << 3, W * 2, m);
                 }
             }
             else

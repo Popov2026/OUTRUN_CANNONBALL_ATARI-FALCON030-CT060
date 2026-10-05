@@ -72,6 +72,110 @@ t8_next:
 	movem.l	(%sp)+,%d2-%d4/%a2
 	rts
 
+
+| ---------------------------------------------------------------------------
+| void atari_tile8d(uint16_t* buf, const uint16_t* dec, const uint8_t* flg, uint32_t palette, uint32_t stride_bytes)
+| Same result as atari_tile8, from the unpacked tiles (hwtiles.cpp, tdec_row): dec holds the tile's
+| 64 pixels, one word each, flg one byte per row: 0 = nothing to draw, 1 = some transparent
+| pixels (drawn one by one), negative = none (drawn 2 pixels at a time: palette in both halves).
+| ---------------------------------------------------------------------------
+	.macro	DPIX	off
+	move.w	\off(%a1),%d1
+	beq.s	1f
+	add.w	%d3,%d1
+	move.w	%d1,\off(%a0)
+1:
+	.endm
+
+	.macro	DROW
+	DPIX	0
+	DPIX	2
+	DPIX	4
+	DPIX	6
+	DPIX	8
+	DPIX	10
+	DPIX	12
+	DPIX	14
+	.endm
+
+	.macro	OROW
+	move.l	(%a1),%d1
+	add.l	%d2,%d1
+	move.l	%d1,(%a0)
+	move.l	4(%a1),%d1
+	add.l	%d2,%d1
+	move.l	%d1,4(%a0)
+	move.l	8(%a1),%d1
+	add.l	%d2,%d1
+	move.l	%d1,8(%a0)
+	move.l	12(%a1),%d1
+	add.l	%d2,%d1
+	move.l	%d1,12(%a0)
+	.endm
+
+	.text
+	.even
+	.globl	_atari_tile8d
+_atari_tile8d:
+	movem.l	%d2-%d4/%a2-%a3,-(%sp)		| 5 regs = 20 bytes
+	move.l	24(%sp),%a0
+	move.l	28(%sp),%a1
+	move.l	32(%sp),%a3
+	move.l	36(%sp),%d3
+	move.l	40(%sp),%a2
+	move.w	%d3,%d2
+	swap	%d2
+	move.w	%d3,%d2				| palette in both halves
+	moveq	#7,%d4
+d8_row:
+	move.b	(%a3)+,%d0
+	beq	d8_next
+	bmi	d8_opaque
+	DROW
+	bra.s	d8_next
+d8_opaque:
+	OROW
+d8_next:
+	lea	16(%a1),%a1
+	adda.l	%a2,%a0
+	dbra	%d4,d8_row
+	movem.l	(%sp)+,%d2-%d4/%a2-%a3
+	rts
+
+| void atari_tile8d_mask(uint16_t* buf, const uint16_t* dec, const uint8_t* flg, uint32_t palette, uint32_t stride_bytes,
+|                        uint32_t rows)
+| atari_tile8d for the rows whose bit is set in `rows` (bit 0 = the top row), like atari_tile8_mask.
+	.globl	_atari_tile8d_mask
+_atari_tile8d_mask:
+	movem.l	%d2-%d5/%a2-%a3,-(%sp)		| 6 regs = 24 bytes
+	move.l	28(%sp),%a0
+	move.l	32(%sp),%a1
+	move.l	36(%sp),%a3
+	move.l	40(%sp),%d3
+	move.l	44(%sp),%a2
+	move.l	48(%sp),%d5
+	move.w	%d3,%d2
+	swap	%d2
+	move.w	%d3,%d2
+	moveq	#7,%d4
+dm_row:
+	move.b	(%a3)+,%d0
+	lsr.w	#1,%d5
+	bcc	dm_next				| this row is not drawn
+	tst.b	%d0
+	beq	dm_next
+	bmi	dm_opaque
+	DROW
+	bra.s	dm_next
+dm_opaque:
+	OROW
+dm_next:
+	lea	16(%a1),%a1
+	adda.l	%a2,%a0
+	dbra	%d4,dm_row
+	movem.l	(%sp)+,%d2-%d5/%a2-%a3
+	rts
+
 #if defined(__mc68020__) || defined(__mc68030__) || defined(__mc68040__) || defined(__mc68060__)
 | ---------------------------------------------------------------------------
 | void atari_tile8_clip(uint16_t* buf, const uint32_t* tile, uint32_t palette, uint32_t stride_bytes,
