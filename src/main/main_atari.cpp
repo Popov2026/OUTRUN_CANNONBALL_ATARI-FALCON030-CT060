@@ -359,6 +359,7 @@ static void main_loop()
     const uint32_t SOUND_UNITS = 10;        // about what one step of synthesis costs on a fast 060 (1/600 s)
     uint32_t next_tick = *hz200 * 3;
     int      K = atari_opt.cadence ? atari_opt.cadence : 2, steps = 0, votes = 0;
+    int      pic_acc = 0;                   // outrun.ini's fps: pictures owed, in 1/30 units
     uint32_t P = 0, L = 0;                  // smoothed picture / logic-step time, 1/600 s
     uint32_t idle = 0, wait_start = 0;
     bool     waiting = false, audio_on = false;
@@ -381,6 +382,9 @@ static void main_loop()
             next_tick = now;                // hopelessly behind: forget the backlog
 
         tick();
+#ifdef AUDIO_TIMING
+        { extern uint32_t g_logic; g_logic++; }
+#endif
         const uint32_t t1 = *hz200 * 3;
         L = (3 * L + (t1 - now)) / 4;
 #ifdef FORCE_SOUND
@@ -390,7 +394,16 @@ static void main_loop()
 #endif
         next_tick += TICK_UNITS;
 
-        if (++steps < K)
+        if (atari_opt.fps)
+        {
+            // fps = N: a picture after the steps that bring N/30 of a picture each, e.g. 25 =
+            // five pictures out of six steps
+            pic_acc += atari_opt.fps;
+            if (pic_acc < 30)
+                continue;
+            pic_acc -= 30;
+        }
+        else if (++steps < K)
             continue;
         steps = 0;
 
@@ -419,7 +432,9 @@ static void main_loop()
                 if (target < 1) target = 1;
                 if (target > K_MAX) target = K_MAX;
             }
-            if (atari_opt.cadence)
+            if (atari_opt.fps)
+                K = 1;                      // picture rate fixed by fps (K only matters for the sound)
+            else if (atari_opt.cadence)
                 K = atari_opt.cadence;      // fixed by the option
             else if (target != K) { if (++votes >= 8) { K = target; votes = 0; } }
             else votes = 0;

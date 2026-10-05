@@ -9,7 +9,7 @@
 #include <cstring>
 #include "atari/options.hpp"
 
-AtariOptions atari_opt = { 1, 0, 1, 100, 0, 0, 2, 1, 0, 1, 2, 0, 0, 1,
+AtariOptions atari_opt = { 1, 0, 1, 100, 0, 0, 0, 2, 1, 0, 1, 2, 0, 0, 1,
                            JOYSRC_UP | JOYSRC_B, JOYSRC_DOWN | JOYSRC_C, JOYSRC_FIRE };
 
 unsigned char g_row_draw[232];
@@ -138,6 +138,7 @@ void atari_load_options(const char* filename)
         else if (!strcmp(key, "vscale"))       set_int(&atari_opt.vscale,       val, 50, 100);
         else if (!strcmp(key, "road_hres"))      set_int(&atari_opt.road_hres,    val, 0, 1);
         else if (!strcmp(key, "cadence"))      set_int(&atari_opt.cadence,      val, 0, 4);
+        else if (!strcmp(key, "fps"))          { set_int(&atari_opt.fps, val, 0, 30); if (atari_opt.fps && atari_opt.fps < 10) atari_opt.fps = 10; }
         else if (!strcmp(key, "sound"))        set_int(&atari_opt.sound,        val, 0, 2);
         else if (!strcmp(key, "music"))        set_int(&atari_opt.music,        val, 0, 1);
         else if (!strcmp(key, "fm_half"))      set_int(&atari_opt.fm_half,      val, 0, 1);        else if (!strcmp(key, "mod"))          set_int(&atari_opt.mod,          val, 0, 1);

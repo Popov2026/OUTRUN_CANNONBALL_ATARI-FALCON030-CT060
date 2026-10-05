@@ -200,6 +200,7 @@ Chaque option est décrite dans [`outrun.ini.example`](outrun.ini.example) (en a
 | `vscale` | 50..100 | 100 | % des 224 lignes calculées (67 donne +17 %, 50 donne +26 %) |
 | `road_hres` | 0 / 1 | 0 | Route calculée en demi-résolution horizontale (+5 %) |
 | `cadence` | 0..4 | 0 | Pas de jeu entre deux images : 0 = auto, 1 = 30 i/s, 2 = 15, 3 = 10, 4 = 7,5 |
+| `fps` | 0, 10..30 | 0 | Nombre d'images par seconde fixe entre les deux (par ex. 25 ou 20), remplace `cadence` ; le jeu ralentit si la machine ne peut pas en dessiner autant |
 | `sound` | 0 / 1 / 2 | 2 | 0 = muet, 1 = son toujours calculé, 2 = son calculé seulement s'il reste du temps CPU |
 | `music` | 0 / 1 | 1 | Coupe la musique sans toucher aux bruitages |
 | `fm_half` | 0 / 1 | 0 | Puce FM émulée à mi-fréquence : moins coûteux, mais son plus terne (avec `fm_dsp=0` seulement) |

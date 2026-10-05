@@ -20,6 +20,10 @@
                         sampled and duplicated in pairs (the road surface only; sprites, tiles, text
                         are unaffected)
       cadence       0   pictures: 0 = automatic, 1..4 = one picture every K game steps
+      fps           0   pictures per second, 10..30, steady (overrides cadence): the game still makes
+                        30 steps a second and draws a picture after N/30 of them, e.g. 25 = five
+                        pictures out of six steps. If the machine cannot draw that many, the
+                        game runs slower than real time. 0 = use cadence.
       sound         2   0 = no sound synthesis, 1 = always, 2 = when the machine has time
       music         1   1 = play the FM music tracks, 0 = skip them (sound effects unaffected)
       fm_half       0   1 = the FM chip (YM2151) is synthesised at half the mixing rate (6258 Hz
@@ -88,6 +92,7 @@ struct AtariOptions
     int vscale;
     int road_hres;
     int cadence;
+    int fps;
     int sound;
     int music;
     int fm_half;

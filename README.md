@@ -196,6 +196,7 @@ Each option is described in [`outrun.ini.example`](outrun.ini.example).
 | `vscale` | 50..100 | 100 | % of the 224 lines that are computed (67 gives +17 %, 50 gives +26 %) |
 | `road_hres` | 0 / 1 | 0 | Road computed at half horizontal resolution (+5 %) |
 | `cadence` | 0..4 | 0 | Game steps between two frames: 0 = auto, 1 = 30 fps, 2 = 15, 3 = 10, 4 = 7.5 |
+| `fps` | 0, 10..30 | 0 | Steady picture rate in between (e.g. 25 or 20), replaces `cadence`; the game slows down if the machine cannot draw that many |
 | `sound` | 0 / 1 / 2 | 2 | 0 = silent, 1 = sound always synthesised, 2 = sound only when CPU time is left |
 | `music` | 0 / 1 | 1 | Turns the music off without affecting sound effects |
 | `fm_half` | 0 / 1 | 0 | FM chip emulated at half rate: cheaper, but duller sound (with `fm_dsp=0` only) |
