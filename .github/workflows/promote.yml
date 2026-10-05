@@ -6,9 +6,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: 'Tag of the release to make the latest (e.g. v0.30-beta)'
+        description: 'Tag of the release to make the latest (e.g. v0.31-beta)'
         required: true
-        default: 'v0.30-beta'
+        default: 'v0.31-beta'
 
 permissions:
   contents: write

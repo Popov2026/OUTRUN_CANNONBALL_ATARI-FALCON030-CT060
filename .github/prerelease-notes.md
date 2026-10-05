@@ -1,11 +1,24 @@
 **English** | [Français](#français)
 
-## v0.30 beta — FM music on the DSP
+## v0.31 beta — faster pictures, steadier picture rate
 
 No ROMs and no `.mod` music are included: add your own ROM set (OutRun revision B) in `roms/`, and
 optionally your `.mod` files in `Music/` (see the README).
 
-### What's new since v0.27
+### What's new since v0.30 beta
+- **`fps` option**: a steady picture rate between the cadences, e.g. `fps = 25` or `fps = 20` (replaces
+  `cadence`; the game slows down if the machine cannot draw that many pictures).
+- **Steadier automatic picture rate** (`cadence = 0`): 30, 25, 20, 15, 10 or 7.5 pictures/s, down as soon as
+  the current rate no longer fits, up only after about 3 s with 20 % to spare — no more back and forth.
+- **Faster picture preparation** (68030 and 68060, identical pictures pixel for pixel): zoomed sprites drawn
+  screen pixel by screen pixel, background tiles unpacked at start-up (opaque rows drawn two pixels at a
+  time), screen written only where pixels changed. About **25 % less time** per picture in a race (Hatari,
+  68060 at 32 MHz: ~40 ms → ~30 ms).
+
+Everything from v0.30 beta is still there (FM music on the DSP, `mod_dsp`, joystick, `PADTEST.TOS`,
+`ROMNAME.TOS`) — see below.
+
+### v0.30 beta — FM music on the DSP (what's new since v0.27)
 - **FM music computed by the Falcon's DSP56001** (`fm_dsp = 1`, default). The original FM music no
   longer stutters: the YM2151 is computed by a DSP program, sample for sample the same sound as the
   CPU emulation, for a fraction of the CPU time.
@@ -38,12 +51,25 @@ Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatar
 
 ## Français
 
-## v0.30 bêta — musique FM sur le DSP
+## v0.31 bêta — images plus rapides, cadence plus stable
 
 Aucune ROM ni musique `.mod` n'est incluse : ajoute ton propre jeu de ROMs (OutRun révision B) dans `roms/`,
 et éventuellement tes `.mod` dans `Music/` (voir le README).
 
-### Nouveautés depuis la v0.27
+### Nouveautés depuis la v0.30 bêta
+- **Option `fps`** : un nombre d'images par seconde fixe entre les cadences, par ex. `fps = 25` ou `fps = 20`
+  (remplace `cadence` ; le jeu ralentit si la machine ne peut pas dessiner autant d'images).
+- **Mode automatique plus stable** (`cadence = 0`) : 30, 25, 20, 15, 10 ou 7,5 images/s ; descend dès que la
+  cadence ne tient plus, ne remonte qu'après ~3 s avec 20 % de marge — plus de va-et-vient.
+- **Préparation de l'image plus rapide** (68030 et 68060, images identiques au pixel près) : sprites zoomés
+  dessinés pixel d'écran par pixel d'écran, tuiles du décor décodées au démarrage (lignes pleines dessinées
+  2 pixels à la fois), écran réécrit seulement là où les pixels changent. Environ **25 % de temps en moins**
+  par image en course (Hatari, 68060 à 32 MHz : ~40 ms → ~30 ms).
+
+Tout ce qu'apportait la v0.30 bêta est toujours là (musique FM sur le DSP, `mod_dsp`, joystick,
+`PADTEST.TOS`, `ROMNAME.TOS`) — voir ci-dessous.
+
+### v0.30 bêta — musique FM sur le DSP (nouveautés depuis la v0.27)
 - **Musique FM calculée par le DSP56001 du Falcon** (`fm_dsp = 1`, par défaut). La musique FM d'origine ne
   saccade plus : le YM2151 est calculé par un programme DSP, au son identique échantillon par échantillon à
   l'émulation CPU, pour une fraction du temps CPU.

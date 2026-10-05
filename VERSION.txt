@@ -1,8 +1,26 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.30 beta
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.31 beta
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
-Changes since v0.27:
+Changes since v0.30 beta:
+  Picture rate
+  - fps option: a steady picture rate between the cadences (e.g. fps = 25
+    or 20); replaces cadence. The game slows down if the machine cannot
+    draw that many pictures.
+  - Steadier automatic rate (cadence = 0): 30, 25, 20, 15, 10 or 7.5
+    pictures/s; it goes down as soon as the current rate no longer fits and
+    up only after about 3 s with 20 % to spare, so it no longer jumps back
+    and forth.
+  Speed (68030 and 68060; same pictures, pixel for pixel)
+  - Sprites: zoomed sprites are drawn screen pixel by screen pixel instead
+    of walking every source pixel; faster shrunk-sprite loop.
+  - Background tiles: unpacked once at start-up (1 MB); rows without a
+    transparent pixel are drawn two pixels at a time.
+  - The screen is only written where pixels changed since the last picture.
+  Together: preparing a picture in a race takes about 25 % less time
+  (Hatari, 68060 at 32 MHz: ~40 ms -> ~30 ms).
+
+Changes in v0.30 beta (since v0.27):
   Sound
   - FM on the DSP (fm_dsp = 1, default): the YM2151 FM chip is computed by a
     DSP56001 program (tools/fmdsp/fm_dsp.asm) instead of the 68k. Same sound,
