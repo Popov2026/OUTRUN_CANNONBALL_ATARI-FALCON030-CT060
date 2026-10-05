@@ -68,6 +68,8 @@
 	.equ	R_COLOR,88
 	.equ	R_SHADOW,92
 	.equ	R_TTAB,96
+	.equ	R_DEC,100		| span renderer: sprite bytes of this bank (0 = not used)
+	.equ	R_ENDTAB,104		| span renderer: words up to the end of the row, per word
 
 | void atari_sprite_rows(void);   (extern "C")
 |
@@ -118,6 +120,17 @@ rows_loop:
 	move.l	_atari_sr+R_SPRDATA,%a1
 	adda.l	%d0,%a1
 	suba.l	%a0,%a1				| one word before the first: the code below steps first
+#ifndef SPR_NOSPAN
+	tst.l	_atari_sr+R_DEC
+	beq.s	1f
+#ifndef SPR_SPAN11
+	cmp.w	#0x200,%d3
+	bne	span_row			| any zoom but 1:1: screen pixel by screen pixel
+#else
+	bra	span_row			| test option: 1:1 too
+#endif
+1:
+#endif
 	moveq	#0,%d1				| xacc
 	tst.l	_atari_sr+R_FLIP
 	bne	flipped
@@ -490,6 +503,118 @@ ffsn:
 	and.l	#0x0f000000,%d0
 	cmp.l	#0x0f000000,%d0
 	bne	fword
+	bra	done
+#endif
+
+#ifndef SPR_NOSPAN
+| ------------------------------ span renderer ------------------------------
+| One row, screen pixel by screen pixel (hwsprites.cpp, spr_dec): the row has N = 8 * words
+| source nibbles (words: up to and including the one that ends it), so K = ceil(N * 0x200 / hzoom)
+| screen pixels, pixel k showing nibble floor(k * hzoom / 0x200) - exactly what the nibble loop
+| draws. Only the pixels inside the clip window are visited.
+| In: a2 first destination pixel, a4/a5 clip start/end, a6 pstep, d3 hzoom, a3 ttab.
+| d5/d6 (colour, shadow) are free here: the whole sprite takes this path.
+span_row:
+	move.l	_atari_sr+R_ADDR,%d0		| first source word
+	move.l	_atari_sr+R_ENDTAB,%a1
+	moveq	#0,%d2
+	move.w	(%a1,%d0.l*2),%d2		| words in the row
+	move.l	%d2,%d4				| the last of them, for `done`
+	subq.l	#1,%d4
+	tst.l	_atari_sr+R_FLIP
+	beq.s	1f
+	neg.l	%d4
+1:	add.l	%d0,%d4
+	asl.l	#2,%d4
+	move.l	_atari_sr+R_SPRDATA,%a1
+	adda.l	%d4,%a1
+	move.l	%a1,0(%sp)
+	moveq	#12,%d4				| K = ceil(words * 8 * 0x200 / hzoom)
+	lsl.l	%d4,%d2
+	add.l	%d3,%d2
+	subq.l	#1,%d2
+	divu.l	%d3,%d2
+	move.l	%a2,%d4				| p
+	move.l	%a6,%d0
+	bmi.s	2f
+	move.l	%a4,%d5				| drawing rightwards: k from (p1 - p) / 2 to (p2 - p) / 2
+	sub.l	%d4,%d5
+	bpl.s	3f
+	moveq	#0,%d5
+3:	asr.l	#1,%d5
+	move.l	%a5,%d6
+	sub.l	%d4,%d6
+	asr.l	#1,%d6
+	bra.s	5f
+2:	move.l	%d4,%d5				| leftwards: k from (p - p2) / 2 + 1 to (p - p1) / 2 + 1
+	sub.l	%a5,%d5
+	bmi.s	4f
+	asr.l	#1,%d5
+	addq.l	#1,%d5
+	bra.s	6f
+4:	moveq	#0,%d5
+6:	move.l	%d4,%d6
+	sub.l	%a4,%d6
+	asr.l	#1,%d6
+	addq.l	#1,%d6
+5:	cmp.l	%d2,%d6
+	ble.s	7f
+	move.l	%d2,%d6				| no further than the row
+7:	sub.l	%d5,%d6				| pixels to draw
+	ble	span_none
+	move.l	%d3,%d2
+	lsl.l	#7,%d2				| source step per pixel, 16.16
+	move.l	%d5,%d1
+	mulu.l	%d2,%d1				| source position of the first pixel
+	move.l	%d5,%d0
+	add.l	%d0,%d0
+	move.l	%a6,%d4
+	bpl.s	8f
+	neg.l	%d0
+8:	adda.l	%d0,%a2				| first pixel drawn
+	move.l	%d6,%d7
+	subq.l	#1,%d7
+	move.l	_atari_sr+R_ADDR,%d0
+	asl.l	#3,%d0
+	move.l	_atari_sr+R_DEC,%a1
+	adda.l	%d0,%a1				| byte of the first nibble
+	moveq	#0,%d4
+	tst.l	_atari_sr+R_FLIP
+	bne.s	span_back
+span_fwd:
+	move.l	%d1,%d0
+	swap	%d0
+	move.b	(%a1,%d0.w),%d4
+	move.w	(%a3,%d4.w*2),%d0		| colour|pix, 0 transparent / marker, 0x8000 shadow
+	beq.s	2f
+	bpl.s	1f
+	move.w	(%a2),%d0
+	and.w	#0x0fff,%d0
+	add.w	#0x1000,%d0
+1:	move.w	%d0,(%a2)
+2:	adda.l	%a6,%a2
+	add.l	%d2,%d1
+	dbra	%d7,span_fwd
+	bra.s	span_none
+span_back:
+	addq.l	#7,%a1				| flipped: words backwards, nibbles LSB first
+span_bloop:
+	move.l	%d1,%d0
+	swap	%d0
+	neg.w	%d0
+	move.b	(%a1,%d0.w),%d4
+	move.w	(%a3,%d4.w*2),%d0
+	beq.s	2f
+	bpl.s	1f
+	move.w	(%a2),%d0
+	and.w	#0x0fff,%d0
+	add.w	#0x1000,%d0
+1:	move.w	%d0,(%a2)
+2:	adda.l	%a6,%a2
+	add.l	%d2,%d1
+	dbra	%d7,span_bloop
+span_none:
+	move.l	0(%sp),%a1			| last source word of the row, for `done`
 	bra	done
 #endif
 

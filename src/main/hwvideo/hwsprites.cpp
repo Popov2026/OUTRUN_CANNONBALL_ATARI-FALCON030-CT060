@@ -2,6 +2,11 @@
 #include "hwvideo/hwsprites.hpp"
 #include "globals.hpp"
 #include "frontend/config.hpp"
+#include <cstdlib>
+#include <cstring>
+#if defined(PLATFORM_ATARI) && (defined(__mc68030__) || defined(__mc68060__))
+static void spr_build(const uint32_t* sprites, uint32_t n);
+#endif
 
 /***************************************************************************
     Video Emulation: OutRun Sprite Rendering Hardware.
@@ -79,6 +84,9 @@ void hwsprites::init(const uint8_t* src_sprites)
 
             sprites[i] = (d0 << 24) | (d1 << 16) | (d2 << 8) | d3;
         }
+#if defined(PLATFORM_ATARI) && (defined(__mc68030__) || defined(__mc68060__)) && !defined(SPR_NOSPAN)
+        spr_build(sprites, SPRITES_LENGTH);   // span renderer tables (see below)
+#endif
     }
 }
 
@@ -211,8 +219,55 @@ struct SprRows
     const uint32_t* sprdata;  int32_t flip, height;
     const unsigned char* rowdraw;  uint16_t* endslot;
     int32_t sprstep, pstep;  uint32_t hzoom, color, shadow;  const uint16_t* ttab;
+    const uint8_t* dec;  const uint16_t* endtab;   // span renderer (see spr_dec below), 0 = not used
 };
 extern "C" { SprRows atari_sr; void atari_sprite_rows(void); }
+
+// Span renderer (sprite_asm030.S, span_row): the sprite graphics with one byte per pixel
+// (spr_dec, MSB nibble first, as the source words are read), and for every source word the
+// number of words up to and including the one that ends its row - forwards (spr_endf: the
+// second-to-last nibble in reading order, bits 4-7, is 0xF) and backwards for flipped sprites
+// (spr_endb: bits 24-27). A row is then drawn screen pixel by screen pixel: pixel k shows source
+// nibble floor(k * hzoom / 0x200), the same as the nibble-by-nibble loop, without walking the
+// nibbles a shrunk sprite skips nor testing the clip window per pixel.
+static uint8_t*  spr_dec  = 0;
+static uint16_t* spr_endf = 0;
+static uint16_t* spr_endb = 0;
+static const uint32_t SPR_PAD = 4096 * 8;   // bytes of padding around spr_dec (rows read past a bank)
+static const uint16_t SPR_ENDCAP = 4095;    // longest row, in words (keeps nibble indices < 32768)
+
+static void spr_build(const uint32_t* sprites, uint32_t n)
+{
+    if (spr_dec) return;   // built once (init() may run again)
+    uint8_t* raw = (uint8_t*)std::malloc(n * 8 + 2 * SPR_PAD);
+    spr_endf = (uint16_t*)std::malloc(n * 2);
+    spr_endb = (uint16_t*)std::malloc(n * 2);
+    if (!raw || !spr_endf || !spr_endb)
+    {
+        std::free(raw); std::free(spr_endf); std::free(spr_endb);
+        spr_endf = spr_endb = 0;
+        return;
+    }
+    std::memset(raw, 0, n * 8 + 2 * SPR_PAD);
+    spr_dec = raw + SPR_PAD;
+    for (uint32_t i = 0; i < n; i++)
+    {
+        const uint32_t w = sprites[i];
+        for (int j = 0; j < 8; j++) spr_dec[i * 8 + j] = (uint8_t)((w >> (28 - 4 * j)) & 15);
+    }
+    uint32_t run = SPR_ENDCAP;
+    for (uint32_t i = n; i-- > 0; )
+    {
+        run = ((sprites[i] & 0xf0) == 0xf0) ? 1 : (run < SPR_ENDCAP ? run + 1 : SPR_ENDCAP);
+        spr_endf[i] = (uint16_t)run;
+    }
+    run = SPR_ENDCAP;
+    for (uint32_t i = 0; i < n; i++)
+    {
+        run = ((sprites[i] & 0x0f000000) == 0x0f000000) ? 1 : (run < SPR_ENDCAP ? run + 1 : SPR_ENDCAP);
+        spr_endb[i] = (uint16_t)run;
+    }
+}
 #endif
 #endif
 #include "atari/options.hpp"   // g_row_draw: rows drawn in a picture (vscale option)
@@ -318,6 +373,8 @@ void hwsprites::render(const uint8_t priority)
             atari_sr.rowdraw = g_row_draw;  atari_sr.endslot = &ramBuff[data+7];
             atari_sr.sprstep = (flip == 0) ? 4 : -4;  atari_sr.pstep = (xdelta > 0) ? 2 : -2;
             atari_sr.hzoom = hzoom;  atari_sr.color = color;  atari_sr.shadow = shadow;  atari_sr.ttab = ttab;
+            atari_sr.dec = spr_dec ? spr_dec + 0x10000 * 8 * bank : 0;
+            atari_sr.endtab = spr_dec ? (flip ? spr_endb : spr_endf) + 0x10000 * bank : 0;
             atari_sprite_rows();
             continue;
         }
