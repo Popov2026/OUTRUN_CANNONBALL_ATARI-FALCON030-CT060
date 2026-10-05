@@ -163,3 +163,48 @@ c16_loop:
 	dbra	%d0,c16_loop
 	rts
 #endif
+
+| void atari_truecolor_diff(const uint16_t* px, uint16_t* shadow, const uint16_t* pal,
+|                           uint16_t* dst, uint32_t longs)
+| Like atari_truecolor, two pixels at a time, but only where the pair of indices differs from
+| `shadow` - what dst shows already (video_falcon.cpp keeps one such copy per screen buffer,
+| in fast RAM). Changed pairs are converted, written to dst and copied into shadow; unchanged
+| ones cost a fast-RAM compare instead of a screen write. longs must be 1..65536.
+	.text
+	.even
+	.globl	_atari_truecolor_diff
+_atari_truecolor_diff:
+	movem.l	%d2/%a2-%a3,-(%sp)		| 3 regs = 12 bytes
+	move.l	16(%sp),%a0			| px
+	move.l	20(%sp),%a3			| shadow
+	move.l	24(%sp),%a1			| pal
+	move.l	28(%sp),%a2			| dst
+	move.l	32(%sp),%d1
+	subq.l	#1,%d1
+tv_loop:
+	move.l	(%a0)+,%d0
+	cmp.l	(%a3)+,%d0
+	beq.s	tv_same
+	move.l	%d0,-4(%a3)
+	move.w	%d0,%d2
+	swap	%d0
+#if defined(__mc68020__) || defined(__mc68030__) || defined(__mc68040__) || defined(__mc68060__)
+	move.w	(%a1,%d0.w*2),%d0
+	swap	%d0
+	move.w	(%a1,%d2.w*2),%d0
+#else
+	add.w	%d0,%d0
+	move.w	0(%a1,%d0.w),%d0
+	swap	%d0
+	add.w	%d2,%d2
+	move.w	0(%a1,%d2.w),%d0
+#endif
+	move.l	%d0,(%a2)+
+	dbra	%d1,tv_loop
+	movem.l	(%sp)+,%d2/%a2-%a3
+	rts
+tv_same:
+	addq.l	#4,%a2
+	dbra	%d1,tv_loop
+	movem.l	(%sp)+,%d2/%a2-%a3
+	rts

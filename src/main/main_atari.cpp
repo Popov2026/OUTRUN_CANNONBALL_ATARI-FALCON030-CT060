@@ -359,7 +359,15 @@ static void main_loop()
     const uint32_t SOUND_UNITS = 10;        // about what one step of synthesis costs on a fast 060 (1/600 s)
     uint32_t next_tick = *hz200 * 3;
     int      K = atari_opt.cadence ? atari_opt.cadence : 2, steps = 0, votes = 0;
-    int      pic_acc = 0;                   // outrun.ini's fps: pictures owed, in 1/30 units
+    int      pic_acc = 0;                   // pictures owed, in 1/60 units (fps and automatic mode)
+    // Automatic mode (cadence = 0, fps = 0): pictures per second in 1/2 units, from 30 down
+    // to 7.5. It goes down one level as soon as the current one has not fitted for a few
+    // pictures, and up one level only after ~3 s in which the slowest recent pictures would
+    // have fitted the faster level with 20 % to spare: no back and forth at a threshold.
+    static const int LEVEL2[] = { 60, 50, 40, 30, 20, 15 };
+    const int NLEVELS = 6;
+    int      lvl = 3, up_votes = 0, down_votes = 0;
+    uint32_t P_peak = 0;                    // slowest recent picture, decaying (1/600 s)
     uint32_t P = 0, L = 0;                  // smoothed picture / logic-step time, 1/600 s
     uint32_t idle = 0, wait_start = 0;
     bool     waiting = false, audio_on = false;
@@ -394,27 +402,38 @@ static void main_loop()
 #endif
         next_tick += TICK_UNITS;
 
-        if (atari_opt.fps)
+        if (atari_opt.cadence == 0)
         {
-            // fps = N: a picture after the steps that bring N/30 of a picture each, e.g. 25 =
-            // five pictures out of six steps
-            pic_acc += atari_opt.fps;
-            if (pic_acc < 30)
+            // fps = N (or the automatic level): a picture after the steps that bring N/30 of a
+            // picture each, e.g. 25 = five pictures out of six steps
+            pic_acc += atari_opt.fps ? 2 * atari_opt.fps : LEVEL2[lvl];
+            if (pic_acc < 60)
                 continue;
-            pic_acc -= 30;
+            pic_acc -= 60;
         }
         else if (++steps < K)
             continue;
         steps = 0;
 
         const uint32_t p0 = *hz200 * 3;
+#ifdef AUDIO_TIMING
+        extern uint32_t g_t_prep, g_t_draw; extern uint32_t atari_fine_time();
+        const uint32_t f0 = atari_fine_time();
+        video.prepare_frame();
+        const uint32_t f1 = atari_fine_time();
+        video.render_frame();
+        g_t_prep += f1 - f0; g_t_draw += atari_fine_time() - f1;
+#else
         video.prepare_frame();
         video.render_frame();
+#endif
 #ifdef AUDIO_TIMING
         { extern uint32_t g_pictures; g_pictures++; }
 #endif
         const uint32_t p1 = *hz200 * 3;
         P = (3 * P + (p1 - p0)) / 4;
+        P_peak -= P_peak / 16;
+        if (p1 - p0 > P_peak) P_peak = p1 - p0;
         renders++;
 #ifdef AUTOSHOT
         // Test aid (-DAUTOSHOT, with -DAUTOPLAY): saves two pictures of the drive as SHOTnnnn.PNG
@@ -432,12 +451,35 @@ static void main_loop()
                 if (target < 1) target = 1;
                 if (target > K_MAX) target = K_MAX;
             }
-            if (atari_opt.fps)
-                K = 1;                      // picture rate fixed by fps (K only matters for the sound)
-            else if (atari_opt.cadence)
+            (void)target; (void)votes;
+            if (atari_opt.cadence)
                 K = atari_opt.cadence;      // fixed by the option
-            else if (target != K) { if (++votes >= 8) { K = target; votes = 0; } }
-            else votes = 0;
+            else
+            {
+                // a level fits when a picture plus the steps it covers (60 / LEVEL2) fit their time
+                #define FITS(l, pic, margin) (room > 0 && (int32_t)(pic) * (100 + (margin)) * LEVEL2[l] <= 60 * 100 * room)
+                if (!atari_opt.fps)
+                {
+#ifdef AUDIO_TIMING
+                    extern uint32_t g_rate_changes, g_rate; const int lvl_before = lvl;
+#endif
+                    if (!FITS(lvl, P, 0)) { if (++down_votes >= 6 && lvl < NLEVELS - 1) { lvl++; down_votes = up_votes = 0; } }
+                    else down_votes = 0;
+                    if (lvl > 0 && FITS(lvl - 1, P_peak, 20))
+                    {
+                        if (++up_votes >= 3 * LEVEL2[lvl] / 2) { lvl--; up_votes = down_votes = 0; }
+                    }
+                    else up_votes = 0;
+#ifdef AUDIO_TIMING
+                    if (lvl != lvl_before) g_rate_changes++;
+                    g_rate = LEVEL2[lvl];
+#endif
+                }
+                #undef FITS
+                // steps per picture, for the sound's idle-time rule below
+                const int r2 = atari_opt.fps ? 2 * atari_opt.fps : LEVEL2[lvl];
+                K = (60 + r2 - 1) / r2;
+            }
         }
         // Sound on when the last group left enough idle time for K steps of synthesis
         // (switch on with a margin, off only when it has clearly run out).

@@ -189,6 +189,10 @@ nfast:
 	cmp.w	#0x200,%d3
 	beq	nf1
 #endif
+#ifndef SPR_NOSHRINK
+	cmp.w	#0x200,%d3
+	bhi	nfs
+#endif
 	moveq	#7,%d7
 nfnib:
 	rol.l	#4,%d2
@@ -246,6 +250,57 @@ nf1:
 2:	move.w	%d0,(%a2)
 1:	adda.l	%a6,%a2
 	.endr
+	move.l	%d2,%d0
+	and.l	#0x000000f0,%d0
+	cmp.l	#0x000000f0,%d0
+	bne	nword
+	bra	done
+#endif
+
+
+#ifndef SPR_NOSHRINK
+| fast word, shrunk sprite (zoom > 0x200): at most one pixel per nibble, so no loop per pixel
+nfs:
+#if defined(__mc68060__)
+	.rept	8
+	rol.l	#4,%d2
+	cmp.w	#0x200,%d1
+	bge.s	3f
+	moveq	#15,%d4
+	and.l	%d2,%d4
+	move.w	(%a3,%d4.l*2),%d0		| colour|pix, 0 transparent / marker, 0x8000 shadow
+	beq.s	2f
+	bpl.s	1f
+	move.w	(%a2),%d0
+	and.w	#0x0fff,%d0
+	add.w	#0x1000,%d0
+1:	move.w	%d0,(%a2)
+2:	adda.l	%a6,%a2
+	add.w	%d3,%d1
+3:
+	sub.w	#0x200,%d1
+	.endr
+#else
+	moveq	#7,%d7
+nfsn:
+	rol.l	#4,%d2
+	cmp.w	#0x200,%d1
+	bge.s	6f
+	moveq	#15,%d4
+	and.l	%d2,%d4
+	move.w	(%a3,%d4.l*2),%d0		| colour|pix, 0 transparent / marker, 0x8000 shadow
+	beq.s	5f
+	bpl.s	4f
+	move.w	(%a2),%d0
+	and.w	#0x0fff,%d0
+	add.w	#0x1000,%d0
+4:	move.w	%d0,(%a2)
+5:	adda.l	%a6,%a2
+	add.w	%d3,%d1
+6:
+	sub.w	#0x200,%d1
+	dbra	%d7,nfsn
+#endif
 	move.l	%d2,%d0
 	and.l	#0x000000f0,%d0
 	cmp.l	#0x000000f0,%d0
@@ -321,6 +376,10 @@ ffast:
 	cmp.w	#0x200,%d3
 	beq	ff1
 #endif
+#ifndef SPR_NOSHRINK
+	cmp.w	#0x200,%d3
+	bhi	ffs
+#endif
 	moveq	#7,%d7
 ffnib:
 	moveq	#15,%d4
@@ -377,6 +436,56 @@ ff1:
 2:	move.w	%d0,(%a2)
 1:	adda.l	%a6,%a2
 	.endr
+	move.l	%d2,%d0
+	and.l	#0x0f000000,%d0
+	cmp.l	#0x0f000000,%d0
+	bne	fword
+	bra	done
+#endif
+
+#ifndef SPR_NOSHRINK
+| fast word, shrunk sprite (zoom > 0x200): at most one pixel per nibble, so no loop per pixel
+ffs:
+#if defined(__mc68060__)
+	.rept	8
+	cmp.w	#0x200,%d1
+	bge.s	3f
+	moveq	#15,%d4
+	and.l	%d2,%d4
+	move.w	(%a3,%d4.l*2),%d0		| colour|pix, 0 transparent / marker, 0x8000 shadow
+	beq.s	2f
+	bpl.s	1f
+	move.w	(%a2),%d0
+	and.w	#0x0fff,%d0
+	add.w	#0x1000,%d0
+1:	move.w	%d0,(%a2)
+2:	adda.l	%a6,%a2
+	add.w	%d3,%d1
+3:
+	ror.l	#4,%d2
+	sub.w	#0x200,%d1
+	.endr
+#else
+	moveq	#7,%d7
+ffsn:
+	cmp.w	#0x200,%d1
+	bge.s	6f
+	moveq	#15,%d4
+	and.l	%d2,%d4
+	move.w	(%a3,%d4.l*2),%d0		| colour|pix, 0 transparent / marker, 0x8000 shadow
+	beq.s	5f
+	bpl.s	4f
+	move.w	(%a2),%d0
+	and.w	#0x0fff,%d0
+	add.w	#0x1000,%d0
+4:	move.w	%d0,(%a2)
+5:	adda.l	%a6,%a2
+	add.w	%d3,%d1
+6:
+	ror.l	#4,%d2
+	sub.w	#0x200,%d1
+	dbra	%d7,ffsn
+#endif
 	move.l	%d2,%d0
 	and.l	#0x0f000000,%d0
 	cmp.l	#0x0f000000,%d0

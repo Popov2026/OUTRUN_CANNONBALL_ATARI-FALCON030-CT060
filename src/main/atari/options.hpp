@@ -19,7 +19,9 @@
       road_hres     0   0 = full-detail road texture (dashes, edges); 1 = half the columns are
                         sampled and duplicated in pairs (the road surface only; sprites, tiles, text
                         are unaffected)
-      cadence       0   pictures: 0 = automatic, 1..4 = one picture every K game steps
+      cadence       0   pictures: 0 = automatic (30, 25, 20, 15, 10 or 7.5 pictures/s; down as soon as
+                        the current rate no longer fits, up only after ~3 s with 20 % to spare),
+                        1..4 = one picture every K game steps
       fps           0   pictures per second, 10..30, steady (overrides cadence): the game still makes
                         30 steps a second and draws a picture after N/30 of them, e.g. 25 = five
                         pictures out of six steps. If the machine cannot draw that many, the

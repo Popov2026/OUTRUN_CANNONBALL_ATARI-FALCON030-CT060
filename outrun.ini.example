@@ -26,7 +26,8 @@ road_hres    = 0     # 0 = road drawn in full detail (default).
                      # dashes and edges are a little chunkier. Sprites, sky and text unaffected.
 
 cadence      = 0     # How many game steps (1/30 s each) go by between two pictures.
-                     # 0 = automatic, the game picks what the machine can hold (default).
+                     # 0 = automatic, the game picks what the machine can hold (default): 30, 25,
+                     #     20, 15, 10 or 7.5 pictures per second, changed only when it has to.
                      # 1 = 30 pictures per second, 2 = 15, 3 = 10, 4 = 7.5.
 
 fps          = 0     # Steady picture rate between those, 10..30 (replaces cadence when set):

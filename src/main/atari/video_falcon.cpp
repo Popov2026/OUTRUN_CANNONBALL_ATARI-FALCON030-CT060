@@ -52,6 +52,29 @@ static void convert_rows(const uint16_t* src, const uint16_t* pal, uint16_t* dst
 }
 
 extern "C" void atari_truecolor_x2(const uint16_t* px, const uint16_t* pal, uint16_t* dst, uint32_t rows);
+extern "C" void atari_truecolor_diff(const uint16_t* px, uint16_t* shadow, const uint16_t* pal, uint16_t* dst, uint32_t longs);
+
+// What each of the three screen buffers shows, as colour indices (fast RAM). A row that has to
+// be converted is then written to the screen (ST-RAM, slow) only where its pixel pairs differ
+// from that copy: a car moving across a row no longer means rewriting the whole row. 0xFFFF
+// never is an index, so a copy filled with it makes every pixel be written.
+static uint16_t* shadow[3] = { 0, 0, 0 };
+
+static void shadow_invalidate(int i)
+{
+    if (shadow[i]) std::memset(shadow[i], 0xff, S16_WIDTH * S16_HEIGHT * 2);
+}
+
+// convert_rows(), writing only what differs from sh (the shadow copy of these destination rows).
+static void convert_rows_diff(const uint16_t* src, const uint16_t* pal, uint16_t* dst, uint16_t* sh, int rows, int dst_stride)
+{
+#ifdef MOVE16
+    if (use_move16) sh = 0;
+#endif
+    if (!sh) { convert_rows(src, pal, dst, rows, dst_stride); return; }
+    for (int q = 0; q < rows; q++)
+        atari_truecolor_diff(src + q * S16_WIDTH, sh + q * S16_WIDTH, pal, dst + q * dst_stride, S16_WIDTH / 2);
+}
 
 // Set/cleared by main_atari.cpp's P-key toggle (see main_atari.cpp's STATE_GAME case).
 extern bool pause_engine;
@@ -275,6 +298,8 @@ bool Render::init(int in_src_width, int in_src_height, int /*scale*/, int /*vide
         if (raw <= 0) return false;
         screen_buffer[i] = (uint8_t*)((raw + 15) & ~15L);
         std::memset(screen_buffer[i], 0, size);
+        shadow[i] = (uint16_t*)std::malloc(S16_WIDTH * S16_HEIGHT * 2);
+        shadow_invalidate(i);
     }
 
 #ifdef MOVE16
@@ -380,8 +405,13 @@ void Render::draw_frame(uint16_t* pixels)
     if (pal_dirty)
     {
         for (int r = 0; r < S16_HEIGHT; r++) row_ver[r]++;
+        for (int i = 0; i < 3; i++) shadow_invalidate(i);   // same indices, other colours
         pal_dirty = false;
     }
+    uint16_t* sh = shadow[draw_buffer];
+#ifdef NO_TCDIFF
+    sh = 0;   // test option: the previous behaviour, whole rows written
+#endif
     uint32_t* ver = buf_ver[draw_buffer];
     const uint32_t* src32 = (const uint32_t*)pixels;
     const uint32_t* prev32 = (const uint32_t*)prev_frame;
@@ -403,7 +433,7 @@ void Render::draw_frame(uint16_t* pixels)
             if (need && reduced)
             {
                 // Rows repeat drawn rows, so they are converted one by one.
-                convert_rows(src + sr * S16_WIDTH, rgb565, dst + (r - r0) * fal_stride, 1, fal_stride);
+                convert_rows_diff(src + sr * S16_WIDTH, rgb565, dst + (r - r0) * fal_stride, sh ? sh + r * S16_WIDTH : 0, 1, fal_stride);
                 need = false;
             }
         }
@@ -413,7 +443,7 @@ void Render::draw_frame(uint16_t* pixels)
         }
         else if (run >= 0)
         {
-            convert_rows(src + run * S16_WIDTH, rgb565, dst + (run - r0) * fal_stride, r - run, fal_stride);
+            convert_rows_diff(src + run * S16_WIDTH, rgb565, dst + (run - r0) * fal_stride, sh ? sh + run * S16_WIDTH : 0, r - run, fal_stride);
             run = -1;
         }
     }
@@ -422,6 +452,8 @@ void Render::draw_frame(uint16_t* pixels)
         draw_pause_text(dst, fal_stride);
     if (g_quit_confirm)
         draw_quit_confirm(dst, fal_stride);
+    if (pause_engine || g_quit_confirm)
+        shadow_invalidate(draw_buffer);   // the captions are not in the copy
     if (g_take_screenshot)
     {
         // Captures exactly what draw_frame() just put together, including the PAUSE overlay
@@ -444,18 +476,24 @@ void Render::draw_frame(uint16_t* pixels)
         }
         frames++;
         if (!ok) bad++;
-        if ((frames % 20) == 0) std::printf("ROWCHECK frames=%d bad=%d%c%c", frames, bad, 13, 10);
+        if ((frames % 20) == 0)
+        {
+            FILE* f = std::fopen("ROWCHECK.TXT", "a");
+            if (f) { std::fprintf(f, "ROWCHECK frames=%d bad=%d\r\n", frames, bad); std::fclose(f); }
+        }
     }
 #endif
     uint32_t t1 = PERF_NOW();
     PERF_PRINTF("DRAW tc=%lu (5ms)\r\n", (unsigned long)(t1 - t0));
 #ifdef DUMP_FRAME
-    // Test aid (-DDUMP_FRAME): write frames 30 and 300 to files as raw big-endian RGB565.
+    // Test aid (-DDUMP_FRAME): write frame 30 and every 300th to FRnnnn.BIN as raw big-endian RGB565.
     static int fc = 0;
     fc++;
-    if (fc == 30 || fc == 300)
+    if (fc == 30 || (fc % 300) == 0)
     {
-        FILE* fp = fopen(fc == 30 ? "frame30.bin" : "frame300.bin", "wb");
+        char name[16];
+        std::sprintf(name, "FR%04d.BIN", fc);
+        FILE* fp = fopen(name, "wb");
         if (fp) { for (int q = 0; q < S16_HEIGHT; q++) fwrite(dst + q * fal_stride, 2, S16_WIDTH, fp); fclose(fp); }
     }
 #endif

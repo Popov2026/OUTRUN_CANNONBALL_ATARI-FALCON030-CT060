@@ -36,7 +36,7 @@
 
 #ifdef AUDIO_TIMING
 static uint32_t fine_time();
-uint32_t g_t_drv, g_t_pcm, g_t_fm, g_t_mix, g_t_replay, g_pictures, g_logic;   // per 300 steps, 1/38400 s
+uint32_t g_t_drv, g_t_pcm, g_t_fm, g_t_mix, g_t_replay, g_pictures, g_logic, g_t_prep, g_t_draw, g_rate_changes, g_rate;   // per 300 steps, 1/38400 s
 uint32_t atari_fine_time() { return fine_time(); }
 #define T_MARK(v) const uint32_t v = fine_time()
 #else
@@ -254,11 +254,13 @@ void Audio::tick_now()
         FILE* f = fopen("AUDT.TXT", "a");
         static uint32_t last = 0;
         const uint32_t now = fine_time();
-        if (f) { fprintf(f, "fm_dsp=%d tick avg %lu us max %lu us; 300 steps took %lu ms (10000 = real time); per step: driver %lu pcm %lu fm %lu us; .mod replay %lu us; pictures %lu game steps %lu\r\n", fmdsp.active() ? 1 : 0,
+        if (f) { fprintf(f, "fm_dsp=%d tick avg %lu us max %lu us; 300 steps took %lu ms (10000 = real time); per step: driver %lu pcm %lu fm %lu us; .mod replay %lu us; pictures %lu game steps %lu; per picture: prepare %lu us, to screen %lu us; auto rate %lu/2 fps, %lu changes\r\n", fmdsp.active() ? 1 : 0,
                          (unsigned long)(sum / n * 26), (unsigned long)(mx * 26), (unsigned long)(last ? (now - last) * 26 / 1000 : 0),
                          (unsigned long)(g_t_drv / n * 26), (unsigned long)(g_t_pcm / n * 26), (unsigned long)(g_t_fm / n * 26),
-                         (unsigned long)(g_t_replay / n * 26), (unsigned long)g_pictures, (unsigned long)g_logic); fclose(f); }
-        g_t_drv = g_t_pcm = g_t_fm = g_t_replay = g_pictures = g_logic = 0;
+                         (unsigned long)(g_t_replay / n * 26), (unsigned long)g_pictures, (unsigned long)g_logic,
+                         (unsigned long)(g_pictures ? g_t_prep / g_pictures * 26 : 0), (unsigned long)(g_pictures ? g_t_draw / g_pictures * 26 : 0),
+                         (unsigned long)g_rate, (unsigned long)g_rate_changes); fclose(f); }
+        g_t_drv = g_t_pcm = g_t_fm = g_t_replay = g_pictures = g_logic = g_t_prep = g_t_draw = g_rate_changes = 0;
         last = now;
         sum = n = mx = 0;
     }
