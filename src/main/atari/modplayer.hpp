@@ -77,7 +77,7 @@ public:
     void dsp_tick();
 
 private:
-    bool load_now(const char* filename, uint32_t mix_rate);
+    bool load_now(uint8_t* raw, long fsize, uint32_t mix_rate);
     void unload_now();
     static const int MAX_SAMPLES = 31;
     static const int MAX_PATTERNS = 128;

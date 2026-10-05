@@ -91,39 +91,58 @@ static inline uint16_t rd16(const uint8_t* p) { return (uint16_t)((p[0] << 8) | 
 
 // Loads a .mod file and starts it from the beginning. See modplayer.hpp for the formats
 // accepted. False (nothing loaded, nothing playing) if the file is missing or not a module.
+// Reads the whole file into one buffer: .mod files are a few hundred KB at most, and this keeps
+// the offset maths below simple (no seeking back and forth while parsing samples vs patterns,
+// which are interleaved in the header but not in the body). 0 if it is missing or too small.
+// A file found missing is not looked for again: on a real machine's hard disk or card, looking
+// for it takes long enough to be heard, at every start of a tune.
+static uint8_t* read_file(const char* filename, long* size)
+{
+    static char missing[8][24];
+    static int n_missing = 0;
+    for (int i = 0; i < n_missing; i++)
+        if (!strcmp(missing[i], filename)) return 0;
+    FILE* f = fopen(filename, "rb");
+    if (!f)
+    {
+        if (n_missing < 8 && strlen(filename) < sizeof(missing[0])) strcpy(missing[n_missing++], filename);
+        return 0;
+    }
+    fseek(f, 0, SEEK_END);
+    long fsize = ftell(f);
+    fseek(f, 0, SEEK_SET);
+    if (fsize < 600) { fclose(f); return 0; }   // smaller than even the old 15-sample header
+    uint8_t* raw = new uint8_t[fsize];
+    size_t got = fread(raw, 1, fsize, f);
+    fclose(f);
+    if ((long)got != fsize) { delete[] raw; return 0; }
+    *size = fsize;
+    return raw;
+}
+
 bool ModPlayer::load(const char* filename, uint32_t mix_rate)
 {
+    // The file is read with the sound running: disk access can take a while on a real machine.
+    long fsize = 0;
+    uint8_t* raw = read_file(filename, &fsize);
     atari_sound_lock();
-    const bool ok = load_now(filename, mix_rate);
+    const bool ok = load_now(raw, fsize, mix_rate);
     atari_sound_unlock();
     return ok;
 }
 
-bool ModPlayer::load_now(const char* filename, uint32_t mix_rate)
+// Takes over raw (the file, or 0 if there is none).
+bool ModPlayer::load_now(uint8_t* raw, long fsize, uint32_t mix_rate)
 {
     unload_now();
 
-    FILE* f = fopen(filename, "rb");
-    if (!f)
+    if (!raw)
     {
         // No .mod for this track: FM music through the normal DMA path, so DSPMOD (mod_dsp = 2)
         // must give the DAC back.
         if (atari_opt.mod_dsp == 2) { dspmod.shutdown(); dsp_replay.stop(); }
         return false;
     }
-
-    // Read the whole file into one buffer: .mod files used as test content
-    // here are a few hundred KB at most, and this keeps the offset maths
-    // below simple (no seeking back and forth while parsing samples vs
-    // patterns, which are interleaved in the header but not in the body).
-    fseek(f, 0, SEEK_END);
-    long fsize = ftell(f);
-    fseek(f, 0, SEEK_SET);
-    if (fsize < 600) { fclose(f); return false; }   // smaller than even the old 15-sample header
-    uint8_t* raw = new uint8_t[fsize];
-    size_t got = fread(raw, 1, fsize, f);
-    fclose(f);
-    if ((long)got != fsize) { delete[] raw; return false; }
 
     // mod_dsp = 2: DSPMOD plays the file as it is (it interprets the patterns itself and streams
     // the samples to its DSP program). Modules it does not take fall back to the parser below.

@@ -44,6 +44,12 @@ uint32_t atari_fine_time() { return fine_time(); }
 #endif
 
 static uint32_t dma_started = 0;   // buffers handed to the DMA (statistics)
+#ifdef UNDERRUN_LOG
+// Test aid: each time the DMA ran out of sound (no buffer queued when it finished), the step
+// number, in UNDR.TXT.
+static uint32_t g_steps_mixed = 0;
+static bool g_starved = false;
+#endif
 
 // Nothing is allocated here: the buffers are created by start_audio(), once the options are known.
 Audio::Audio()
@@ -451,6 +457,9 @@ void Audio::tick_now()
     }
     queue[queue_len++] = fill_idx;
     queued_bytes = samples * 2;
+#ifdef UNDERRUN_LOG
+    g_steps_mixed++;
+#endif
     service_now();
 }
 
@@ -469,6 +478,15 @@ void Audio::service()
 
 void Audio::service_now()
 {
+#ifdef UNDERRUN_LOG
+    if (sound_enabled && dma_started && queue_len == 0 && !dma_busy() && !g_starved)
+    {
+        g_starved = true;
+        FILE* f = fopen("UNDR.TXT", "a");
+        if (f) { fprintf(f, "underrun after step %lu\r\n", (unsigned long)g_steps_mixed); fclose(f); }
+    }
+    if (queue_len) g_starved = false;
+#endif
     if (!sound_enabled || queue_len == 0 || dsp_replay.active() || dspmod.active() || dma_busy()) return;
     playing = queue[0];
     queue[0] = queue[1];

@@ -15,6 +15,7 @@ FmDsp fmdsp;
 #include <mint/cookie.h>
 #include "hwaudio/ym2151.hpp"
 #include "atari/fm_dsp_p56.h"
+#include <cstdio>
 
 // The emulation's state (hwaudio/ym2151.cpp) and the tables the DSP program needs.
 extern YM2151Operator oper[32];
@@ -210,6 +211,18 @@ const int16_t* FmDsp::step(uint32_t frames)
 #endif
     if (frames > MAX_FRAMES) { fail(); return 0; }
     flush();
+#ifdef UNDERRUN_LOG
+    {
+        // Test aid: steps with many register changes (a tune starting), in UNDR.TXT.
+        static uint32_t n = 0;
+        n++;
+        if (queued > 60)
+        {
+            FILE* f = fopen("UNDR.TXT", "a");
+            if (f) { fprintf(f, "fm step %lu: %d words of events\r\n", (unsigned long)n, queued); fclose(f); }
+        }
+    }
+#endif
     put(0x040000 | frames);
     if (!send_queue()) return 0;
     // The DSP sends the previous step back straight away, then computes this one: first how
