@@ -1,11 +1,17 @@
 **English** | [Français](#français)
 
-## v0.37 beta — menu: EXIT, smooth credits to Last Wave
+## v0.38 beta — Escape goes back to the menu
 
 No ROMs and no `.mod` music are included: add your own ROM set (OutRun revision B) in `roms/`, and
 optionally your `.mod` files in `Music/` (see the README).
 
-### What's new since v0.36 beta
+### What's new since v0.37 beta
+- **Escape** (or F1) during the game goes back to PLAY / OPTIONS / CREDITS / EXIT; **EXIT** quits. F10 is gone.
+  In the menu, Escape on the options or credits page goes back to the first page.
+- The credits show their beginning for 3 s before they scroll.
+- PLAY no longer jumps back half a character as the game starts.
+
+### v0.37 beta — menu: EXIT, smooth credits to Last Wave (what's new since v0.36 beta)
 - **EXIT** under CREDITS: quits the game (as F10 then ↑).
 - **Credits** scrolling pixel by pixel, with headers (ORIGINAL GAME, MUSIC, ENGINE, CODE, SOUND, TOOLS, SPECIAL
   THANKS), to **Last Wave**. Special thanks to Marss, GCoons & Evil from www.atari-forum.com, and Anthropic Claude.
@@ -89,12 +95,18 @@ Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatar
 
 ## Français
 
-## v0.37 bêta — menu : EXIT, crédits fluides sur Last Wave
+## v0.38 bêta — Échap ramène au menu
 
 Aucune ROM ni musique `.mod` n'est incluse : ajoute ton propre jeu de ROMs (OutRun révision B) dans `roms/`,
 et éventuellement tes `.mod` dans `Music/` (voir le README).
 
-### Nouveautés depuis la v0.36 bêta
+### Nouveautés depuis la v0.37 bêta
+- **Échap** (ou F1) pendant le jeu ramène au menu PLAY / OPTIONS / CREDITS / EXIT ; **EXIT** quitte le jeu. F10
+  est retiré. Dans le menu, Échap sur la page des options ou des crédits revient à la première page.
+- Les crédits restent 3 s sur leur début avant de défiler.
+- PLAY ne se décale plus d'un demi-caractère au lancement de la partie.
+
+### v0.37 bêta — menu : EXIT, crédits fluides sur Last Wave (nouveautés depuis la v0.36 bêta)
 - **EXIT** sous CREDITS : quitte le jeu (comme F10 puis ↑).
 - **Crédits** qui défilent pixel par pixel, avec des entêtes (ORIGINAL GAME, MUSIC, ENGINE, CODE, SOUND, TOOLS,
   SPECIAL THANKS), sur **Last Wave**. Remerciements à Marss, GCoons & Evil de www.atari-forum.com, et à Anthropic

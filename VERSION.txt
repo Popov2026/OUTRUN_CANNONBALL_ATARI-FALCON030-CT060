@@ -1,8 +1,16 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.37 beta
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.38 beta
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
-Changes since v0.36 beta:
+Changes since v0.37 beta:
+  Menu
+  - Escape (or F1) during the game goes back to PLAY / OPTIONS / CREDITS /
+    EXIT; EXIT quits. F10 and the QUIT overlay are gone. In the menu,
+    Escape on the options or credits page goes back to the first page.
+  - The credits show their beginning for 3 s before they scroll.
+  - PLAY no longer jumps back half a character as the game starts.
+
+Changes in v0.37 beta (since v0.36 beta):
   Menu
   - EXIT, under CREDITS: quits the game (as F10 then up).
   - The credits scroll pixel by pixel, with headers (ORIGINAL GAME, MUSIC,
