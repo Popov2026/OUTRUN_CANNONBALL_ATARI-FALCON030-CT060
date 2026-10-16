@@ -1,8 +1,22 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.33 beta
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.35 beta
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
-Changes since v0.32 beta:
+Changes since v0.33 beta:
+  Menu
+  - The game starts on a menu over the OutRun logo and a scrolling road
+    (F1 brings it back during the game): PLAY (selected), OPTIONS and
+    CREDITS.
+  - OPTIONS: the outrun.ini options that apply at once, changed live -
+    pictures per second (AUTO, 30, 25, 20, 15, 10, 7.5), lines drawn (100,
+    75, 67, 50 %), road detail, scenery, shadows (all, near ones only,
+    none), music, and what the joystick's buttons do. SAVE SETTINGS writes
+    them into outrun.ini (only their values change: comments and other
+    lines stay); BACK goes back. The other options (sound, FM on the DSP,
+    .mod music...) stay in outrun.ini: they are only read at start-up.
+  - CREDITS: the thanks, scrolling under the logo.
+
+Changes in v0.33 beta (since v0.32 beta):
   Sound
   - Starting a .mod (radio screen, race start) no longer breaks up the
     sound: the module used to be made ready with the sound held off (every

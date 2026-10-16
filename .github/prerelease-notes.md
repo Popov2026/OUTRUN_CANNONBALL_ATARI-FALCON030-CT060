@@ -1,11 +1,21 @@
 **English** | [Français](#français)
 
-## v0.33 beta — clean start of the `.mod` music
+## v0.35 beta — options menu
 
 No ROMs and no `.mod` music are included: add your own ROM set (OutRun revision B) in `roms/`, and
 optionally your `.mod` files in `Music/` (see the README).
 
-### What's new since v0.32 beta
+### What's new since v0.33 beta
+- **A menu at start-up**, over the OutRun logo and a scrolling road (**F1** brings it back during the game):
+  **PLAY** (selected), **OPTIONS** and **CREDITS**.
+- **OPTIONS**: the `outrun.ini` options that apply at once, changed live — pictures per second (AUTO, 30, 25,
+  20, 15, 10, 7.5), lines drawn (100, 75, 67, 50 %), road detail, scenery, shadows (all / near ones / none),
+  music, and what the joystick's buttons do. **SAVE SETTINGS** writes them into `outrun.ini` (only their values
+  change: comments and other lines stay). Sound, FM on the DSP and `.mod` options stay in `outrun.ini` (read at
+  start-up only).
+- **CREDITS**: the thanks, scrolling under the logo.
+
+### v0.33 beta — clean start of the `.mod` music (what's new since v0.32 beta)
 - **Starting a `.mod` no longer breaks up the sound** (radio screen, race start). The module used to be made
   ready with the sound held off (every sample converted to 16 bits — unused by the DSP replay — then again for
   the DSP). It is now made ready with the sound running, straight into the form its replay uses; the sound is
@@ -66,12 +76,22 @@ Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatar
 
 ## Français
 
-## v0.33 bêta — début des musiques `.mod` propre
+## v0.35 bêta — menu des options
 
 Aucune ROM ni musique `.mod` n'est incluse : ajoute ton propre jeu de ROMs (OutRun révision B) dans `roms/`,
 et éventuellement tes `.mod` dans `Music/` (voir le README).
 
-### Nouveautés depuis la v0.32 bêta
+### Nouveautés depuis la v0.33 bêta
+- **Un menu au démarrage**, sur le logo OutRun et une route qui défile (**F1** le rappelle pendant le jeu) :
+  **PLAY** (sélectionné), **OPTIONS** et **CREDITS**.
+- **OPTIONS** : les options de `outrun.ini` qui s'appliquent tout de suite, modifiées en direct — images par
+  seconde (AUTO, 30, 25, 20, 15, 10, 7,5), lignes calculées (100, 75, 67, 50 %), détail de la route, décor,
+  ombres (toutes / proches / aucune), musique, et le rôle des boutons du joystick. **SAVE SETTINGS** les écrit
+  dans `outrun.ini` (seules leurs valeurs changent : commentaires et autres lignes restent). Le son, la FM sur
+  le DSP et les options `.mod` restent dans `outrun.ini` (lues au démarrage seulement).
+- **CREDITS** : les remerciements, qui défilent sous le logo.
+
+### v0.33 bêta — début des musiques `.mod` propre (nouveautés depuis la v0.32 bêta)
 - **Le lancement d'un `.mod` ne hache plus le son** (écran de l'autoradio, départ de la course). Le module était
   préparé pendant que le son était bloqué (tous les samples convertis en 16 bits — inutiles pour le replay DSP —
   puis encore pour le DSP). Il est maintenant préparé son en marche, directement sous la forme qu'utilise son
