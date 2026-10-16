@@ -64,6 +64,15 @@ void ModPlayer::unload()
     atari_sound_unlock();
 }
 
+void ModPlayer::stop_all()
+{
+    atari_sound_lock();
+    unload_now();
+    dspmod.shutdown();
+    dsp_replay.stop();
+    atari_sound_unlock();
+}
+
 void ModPlayer::unload_now()
 {
     if (dspmod_raw)

@@ -112,6 +112,14 @@ enum { JOYSRC_UP = 1, JOYSRC_DOWN = 2, JOYSRC_FIRE = 4, JOYSRC_B = 8, JOYSRC_C =
 extern AtariOptions atari_opt;
 
 void atari_load_options(const char* filename);
+// vscale changed while running (the row tables are rebuilt).
+void atari_set_vscale(int vscale);
+// Writes the options the menu changes (atari/optmenu.cpp) into the file: their values are
+// replaced in place, the rest of the file (comments, other keys) stays as it is; keys that are
+// not there are added at the end. False if the file could not be written.
+bool atari_save_options(const char* filename);
+// "up+b", "fire", "none"...: the words joy_accel / joy_brake / joy_gear take.
+void atari_joy_name(int bits, char* out);
 
 // Rows drawn per picture (see vscale).  Filled by atari_load_options().
 extern unsigned char g_row_draw[232];   // 1: this row is drawn (padded past the end with 0)

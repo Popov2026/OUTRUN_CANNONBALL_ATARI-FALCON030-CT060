@@ -40,6 +40,7 @@ extern "C" long __stksize = 262144L;
 #include "main.hpp"
 #include "engine/outrun.hpp"
 #include "engine/omusic.hpp"
+#include "atari/optmenu.hpp"
 #include "engine/oroad.hpp"
 #include "engine/oinitengine.hpp"
 #include "frontend/config.hpp"
@@ -170,6 +171,11 @@ static void tick()
                 // hardcoded glyph bitmaps blitted after palette conversion sidesteps the whole
                 // ROM-tile-encoding question and is guaranteed the same regardless of game state.
                 if (input.has_pressed(Input::PAUSE)) pause_engine = !pause_engine;
+                // F1: back to the options menu (atari/optmenu.hpp)
+                if (input.f1_down() && !g_quit_confirm) { pause_engine = false; state = STATE_INIT_MENU; }
+#ifdef MENU_SCRIPT
+                { static int n = 0; if (++n == 600) { pause_engine = false; state = STATE_INIT_MENU; } }   // test: F1 after 20 s of game
+#endif
                 // F9: screenshot (not C - suspected host-level interception, see input.hpp's
                 // SC_F9 comment). The actual capture happens in atari/video_falcon.cpp's
                 // Render::draw_frame() (see g_take_screenshot there), which is where the final,
@@ -244,8 +250,27 @@ static void tick()
             }
             break;
 
-        // STATE_MENU / STATE_INIT_MENU intentionally absent - no frontend
-        // menu is linked in this pass (see file header).
+        // The options menu (atari/optmenu.hpp), at start-up and with F1.
+        case STATE_INIT_MENU:
+            optmenu.init();
+            state = STATE_MENU;
+            break;
+
+        case STATE_MENU:
+            if (g_quit_confirm)
+            {
+                // the "QUIT" overlay (see STATE_GAME): up quits, down goes back
+                if (input.has_pressed(Input::UP)) state = STATE_QUIT;
+                if (input.has_pressed(Input::DOWN)) g_quit_confirm = false;
+            }
+            else if (optmenu.tick())
+                state = STATE_INIT_GAME;
+            input.frame_done();
+#ifndef NO_SOUND
+            if (!audio.irq_mode()) { audio.fm_before_driver(); osoundint.tick(); }
+#endif
+            break;
+
         default:
             break;
     }
@@ -738,7 +763,11 @@ int main(int argc, char* argv[])
     }
 #endif
 
-    state = STATE_INIT_GAME; // no frontend menu: boot straight into the game
+#ifdef AUTOPLAY
+    state = STATE_INIT_GAME; // test runs: straight into the game
+#else
+    state = STATE_INIT_MENU; // the options menu first (atari/optmenu.hpp)
+#endif
 
     main_loop();
     // main_loop() already ran quit_cleanup() (stops the sound DMA, restores the keyboard vector,

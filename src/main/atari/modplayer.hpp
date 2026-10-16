@@ -56,6 +56,8 @@ public:
     // silent) if the file can't be opened or doesn't look like a .mod.
     bool load(const char* filename, uint32_t mix_rate);
     void unload();
+    // No music at all: the song is freed and a DSP replay gives the DSP and the DAC back.
+    void stop_all();
     bool loaded() const { return song_loaded; }
 
     // Renders `frames` mono samples at the mix_rate passed to load(), ADDING

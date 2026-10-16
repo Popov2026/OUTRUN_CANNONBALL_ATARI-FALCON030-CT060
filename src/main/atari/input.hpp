@@ -89,6 +89,8 @@ public:
     bool escape_down() const { return scan_state[0x01]; }
     bool f10_down() const { return scan_state[0x44]; }
     bool f9_down() const { return scan_state[0x43]; }   // diagnostic: direct read, bypasses keys[]/has_pressed()
+    bool f1_down() const { return scan_state[0x3b]; }   // options menu (atari/optmenu.hpp)
+    int  joy_src;   // what the joysticks / pads give this poll, JOYSRC_* bits (atari/options.hpp)
     bool y_down() const { return scan_state[0x15]; }
     bool n_down() const { return scan_state[0x31]; }
     // True if ANY key at all is currently down - a much more basic test than any single key: if

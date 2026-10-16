@@ -42,6 +42,7 @@ Input::Input()
     key_press = -1;
     joy_button = -1;
     ext_ports = false;
+    joy_src = 0;
     wheel = a_wheel = a_accel = a_brake = a_motor = 0x80;
     std::memset(keys, 0, sizeof(keys));
     std::memset(keys_old, 0, sizeof(keys_old));
@@ -239,6 +240,7 @@ void Input::poll()
     if ((joy1_state & JOY1_FIRE) || (pad & PAD_A))    src |= JOYSRC_FIRE;
     if (pad & PAD_B)                                  src |= JOYSRC_B;
     if (pad & PAD_C)                                  src |= JOYSRC_C;
+    joy_src = src;
     keys[UP]        = scan_state[SC_UP];
     keys[DOWN]      = scan_state[SC_DOWN];
     keys[LEFT]       = scan_state[SC_LEFT]  || (joy1_state & JOY1_LEFT)  != 0 || (pad & PAD_LEFT)  != 0;

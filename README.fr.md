@@ -37,7 +37,7 @@ ni aucune musique `.mod` n'est incluse.
 1. [Contenu du dépôt](#contenu-du-dépôt)
 2. [Démarrage rapide](#démarrage-rapide)
 3. [Commandes](#commandes)
-4. [Fichier d'options `outrun.ini`](#fichier-doptions-outrunini)
+4. [Menu des options](#menu-des-options) et [fichier d'options `outrun.ini`](#fichier-doptions-outrunini)
 5. [Musique `.mod` (option)](#musique-mod-option)
 6. [Lancer sous l'émulateur Hatari](#lancer-sous-lémulateur-hatari)
 7. [Compiler depuis les sources](#compiler-depuis-les-sources)
@@ -162,6 +162,7 @@ en mode démo, sans menu. Appuie sur **Entrée** pour mettre une pièce et lance
 | V | Changer de vue |
 | P | Pause (affiche « PAUSE ») |
 | F9 | Capture d'écran (`SHOTnnnn.PNG` dans le dossier du jeu) |
+| F1 | Retour au menu des options |
 | Échap / F10 | Quitter (confirmer avec ↑, annuler avec ↓) |
 
 ### Joystick standard (prise DB9, port joystick, pas le port souris)
@@ -186,6 +187,17 @@ Ces ports acceptent un pad Jaguar, ou un joystick classique branché sur un adap
 > n'est branché). **Ce n'est pas encore testé avec un vrai pad ou joystick branché.**
 
 ---
+
+## Menu des options
+
+Le jeu démarre sur un menu d'options, sur le logo OutRun et une route qui défile (F1 le rappelle
+pendant le jeu). ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent, Entrée ou
+fire valide. Il règle les options qui s'appliquent tout de suite : images par seconde (AUTO, 30,
+25, 20, 15, 10, 7,5), lignes calculées (100, 75, 67, 50 %), détail de la route, décor, ombres
+(toutes, proches seulement, aucune), musique, et le rôle du haut / bas / fire / boutons de pad du
+joystick. **SAVE SETTINGS** les écrit dans `outrun.ini` (seules leurs valeurs changent : les
+commentaires et les autres lignes restent), **PLAY** lance le jeu. Les autres options (son, FM
+sur le DSP, musique `.mod`...) restent dans `outrun.ini` : elles ne sont lues qu'au démarrage.
 
 ## Fichier d'options `outrun.ini`
 

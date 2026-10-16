@@ -80,6 +80,7 @@ SOURCES := \
 	$(SRC)/atari/audio.cpp \
 	$(SRC)/atari/timer.cpp \
 	$(SRC)/atari/options.cpp \
+	$(SRC)/atari/optmenu.cpp \
 	$(SRC)/atari/modplayer.cpp \
 	$(SRC)/atari/dsp_replay.cpp \
 	$(SRC)/atari/gemredraw.cpp \

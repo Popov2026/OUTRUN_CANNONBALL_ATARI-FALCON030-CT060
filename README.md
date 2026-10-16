@@ -34,7 +34,7 @@ folder and empty `roms/` and `Music/` folders with instructions. Unzip it, add y
 1. [Repository layout](#repository-layout)
 2. [Quick start](#quick-start)
 3. [Controls](#controls)
-4. [Options file `outrun.ini`](#options-file-outrunini)
+4. [Options menu](#options-menu) and [options file `outrun.ini`](#options-file-outrunini)
 5. [`.mod` music (optional)](#mod-music-optional)
 6. [Running in the Hatari emulator](#running-in-the-hatari-emulator)
 7. [Building from source](#building-from-source)
@@ -158,6 +158,7 @@ with no menu. Press **Return** to insert a coin and start a race.
 | V | Change view |
 | P | Pause (shows "PAUSE") |
 | F9 | Screenshot (`SHOTnnnn.PNG` in the game's folder) |
+| F1 | Back to the options menu |
 | Esc / F10 | Quit (confirm with ↑, cancel with ↓) |
 
 ### Standard joystick (DB9 socket, the joystick port, not the mouse port)
@@ -182,6 +183,17 @@ These ports take a Jaguar pad, or a plain joystick on an adapter:
 > is plugged in). **This has not yet been tested with a real pad or joystick plugged in.**
 
 ---
+
+## Options menu
+
+The game starts on an options menu, over the OutRun logo and a scrolling road (F1 brings it back
+during the game). ↑ / ↓ (keys or joystick) pick a line, ← / → change it, Return or fire selects.
+It changes the options that take effect at once: pictures per second (AUTO, 30, 25, 20, 15, 10,
+7.5), lines drawn (100, 75, 67, 50 %), road detail, scenery, shadows (all, near ones only, none),
+music, and what the joystick's up / down / fire / pad buttons do. **SAVE SETTINGS** writes them
+into `outrun.ini` (only their values change: the comments and the other lines stay), **PLAY**
+starts the game. The other options (sound, FM on the DSP, `.mod` music...) stay in `outrun.ini`:
+they are only read at start-up.
 
 ## Options file `outrun.ini`
 
