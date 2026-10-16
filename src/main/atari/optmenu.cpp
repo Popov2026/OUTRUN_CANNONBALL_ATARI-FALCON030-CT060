@@ -64,6 +64,7 @@ static const char* CREDITS[] = {
 static const int NCREDITS = sizeof(CREDITS) / sizeof(CREDITS[0]);
 static const int CREDIT_TOP = 14, CREDIT_BOT = 26;   // text rows: 14..25 shown, 26 coming in
 static const int CREDIT_SPEED = 2;                   // game steps per pixel of scrolling
+static const int CREDIT_PAUSE = 90;                  // game steps (3 s) before it starts scrolling
 
 // Picture rate: cadence (game steps per picture) or a steady fps (see options.hpp).
 static const struct { const char* name; int cadence, fps; } RATES[] = {
@@ -240,8 +241,9 @@ void OptMenu::draw()
     const uint16_t col = ohud.GREEN;
     if (page == 2)
     {
-        // credits: one pixel up every CREDIT_SPEED steps, round and round; BACK below
-        const int pix = frame / CREDIT_SPEED;
+        // credits: still for the first 3 s, then one pixel up every CREDIT_SPEED steps, round and
+        // round; BACK below
+        const int pix = frame > CREDIT_PAUSE ? (frame - CREDIT_PAUSE) / CREDIT_SPEED : 0;
         const int top = pix / 8;
         g_text_scroll_top = CREDIT_TOP;
         g_text_scroll_bot = CREDIT_BOT;
@@ -369,7 +371,7 @@ int OptMenu::tick()
         if (t == 40 || t == 50) scripted = 2;
         if (t == 60) scripted = 16;
         extern bool g_take_screenshot;
-        if (t == 30 || t == 200 || t == 203 || t == 206 || t == 500 || t == 800) g_take_screenshot = true;
+        if (t == 30 || t == 120 || t == 145 || t == 200 || t == 500) g_take_screenshot = true;
     }
 #endif
     int hit = (dirs | scripted) & ~last_dirs;
@@ -431,7 +433,9 @@ int OptMenu::tick()
     draw();
     if (action != MENU_NONE)
     {
-        // the text and the ROM's characters back in place for the game
+        // the text and the ROM's characters back in place for the game; the menu's text cleared
+        // first, so that it does not show at its unshifted place before the game draws its own
+        video.clear_text_ram();
         outline_glyphs(false);
         for (int y = 0; y < 28; y++) g_text_dx[y] = 0;
         g_text_scroll_top = g_text_scroll_bot = -1;
