@@ -190,13 +190,15 @@ Ces ports acceptent un pad Jaguar, ou un joystick classique branché sur un adap
 
 ## Menu des options
 
-Le jeu démarre sur un menu d'options, sur le logo OutRun et une route qui défile (F1 le rappelle
-pendant le jeu). ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent, Entrée ou
-fire valide. Il règle les options qui s'appliquent tout de suite : images par seconde (AUTO, 30,
+Le jeu démarre sur un menu, sur le logo OutRun et une route qui défile (F1 le rappelle pendant le
+jeu) : **PLAY** (sélectionné : Entrée ou fire lance le jeu) et, en dessous, **OPTIONS**, qui ouvre
+la page des options. Là, ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent,
+Entrée ou fire passe à la valeur suivante ; **BACK** revient à PLAY / OPTIONS. La page des options
+règle les options qui s'appliquent tout de suite : images par seconde (AUTO, 30,
 25, 20, 15, 10, 7,5), lignes calculées (100, 75, 67, 50 %), détail de la route, décor, ombres
 (toutes, proches seulement, aucune), musique, et le rôle du haut / bas / fire / boutons de pad du
 joystick. **SAVE SETTINGS** les écrit dans `outrun.ini` (seules leurs valeurs changent : les
-commentaires et les autres lignes restent), **PLAY** lance le jeu. Les autres options (son, FM
+commentaires et les autres lignes restent). Les autres options (son, FM
 sur le DSP, musique `.mod`...) restent dans `outrun.ini` : elles ne sont lues qu'au démarrage.
 
 ## Fichier d'options `outrun.ini`

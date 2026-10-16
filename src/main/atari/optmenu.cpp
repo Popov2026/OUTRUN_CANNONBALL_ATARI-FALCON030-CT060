@@ -36,10 +36,12 @@ static const int16_t  LOGO_Y       = -60;     // as frontend/menu.cpp
 static const uint16_t HORIZON_DEST = 0x3A0;
 static const int      ROAD_SPEED   = 50;      // config.menu.road_scroll_speed's default
 
-enum { L_PICTURES, L_LINES, L_ROAD, L_SCENERY, L_SHADOWS, L_MUSIC, L_ACCEL, L_BRAKE, L_GEAR, L_SAVE, L_PLAY, NLINES };
+// first page: PLAY, OPTIONS; the options page:
+enum { L_PICTURES, L_LINES, L_ROAD, L_SCENERY, L_SHADOWS, L_MUSIC, L_ACCEL, L_BRAKE, L_GEAR, L_SAVE, L_BACK, NLINES };
 static const char* LABELS[NLINES] = {
     "PICTURES PER SEC", "LINES DRAWN", "ROAD DETAIL", "SCENERY", "SHADOWS", "MUSIC",
-    "JOY ACCELERATE", "JOY BRAKE", "JOY GEAR CHANGE", "SAVE SETTINGS", "PLAY" };
+    "JOY ACCELERATE", "JOY BRAKE", "JOY GEAR CHANGE", "SAVE SETTINGS", "BACK" };
+static const char* MAIN_LABELS[2] = { "PLAY", "OPTIONS" };
 
 // Picture rate: cadence (game steps per picture) or a steady fps (see options.hpp).
 static const struct { const char* name; int cadence, fps; } RATES[] = {
@@ -112,6 +114,8 @@ void OptMenu::init()
 
     frame = 0;
     message = 0;
+    page = 0;
+    main_cursor = 0;   // on PLAY
     last_dirs = ~0;   // keys still down from the game do nothing until released
 }
 
@@ -162,6 +166,17 @@ static void upper(char* s)
 void OptMenu::draw()
 {
     video.clear_text_ram();
+    if (page == 0)
+    {
+        for (int i = 0; i < 2; i++)
+        {
+            const int x = 20 - (int)strlen(MAIN_LABELS[i]) / 2, y = 18 + 2 * i;
+            ohud.blit_text_new(x, y, MAIN_LABELS[i], i == main_cursor ? ohud.PINK : ohud.GREEN);
+            if (i == main_cursor)
+                video.write_text32(ohud.translate(x - 3, y), roms.rom0.read32(TILES_MINICARS1));
+        }
+        return;
+    }
     const int y0 = 14;
     for (int i = 0; i < NLINES; i++)
     {
@@ -186,7 +201,7 @@ void OptMenu::draw()
         }
         upper(value);
         const uint16_t col = i == cursor ? ohud.PINK : ohud.GREEN;
-        const int y = y0 + i + (i >= L_SAVE ? 1 : 0);   // a blank line before SAVE / PLAY
+        const int y = y0 + i + (i >= L_SAVE ? 1 : 0);   // a blank line before SAVE / BACK
         if (i >= L_SAVE)
             ohud.blit_text_new(20 - (int)strlen(LABELS[i]) / 2, y, LABELS[i], col);
         else
@@ -216,22 +231,35 @@ bool OptMenu::tick()
                    | (input.is_pressed(Input::START) || (js & JOYSRC_FIRE) ? 16 : 0);   // Enter, fire, pad A
     int scripted = 0;
 #ifdef MENU_SCRIPT
-    // Test aid: presses keys by itself - 30 pictures/s, 75 % of the lines, shadows near only,
-    // then SAVE and PLAY.
+    // Test aid: presses keys by itself - OPTIONS, 30 pictures/s, 75 % of the lines, shadows near
+    // only, SAVE, BACK, then PLAY.
     {
         static const struct { int frame, bits; } KEYS[] = {
+            { 40, 2 }, { 50, 16 },
             { 60, 8 }, { 70, 2 }, { 80, 8 }, { 90, 2 }, { 100, 2 }, { 110, 2 }, { 120, 8 },
-            { 130, 2 }, { 140, 2 }, { 150, 2 }, { 160, 2 }, { 170, 2 }, { 180, 16 }, { 230, 2 }, { 240, 16 } };
+            { 130, 2 }, { 140, 2 }, { 150, 2 }, { 160, 2 }, { 170, 2 }, { 180, 16 }, { 230, 2 }, { 240, 16 },
+            { 280, 16 } };
         for (unsigned k = 0; k < sizeof(KEYS) / sizeof(KEYS[0]); k++) if (KEYS[k].frame == frame) scripted = KEYS[k].bits;
         extern bool g_take_screenshot;
-        if (frame == 200) g_take_screenshot = true;
-        if (frame == 30) { static int visits = 0; if (++visits == 2) g_take_screenshot = true; }   // back via F1
+        if (frame == 30 || frame == 200 || frame == 260) g_take_screenshot = true;
     }
 #endif
     const int hit = (dirs | scripted) & ~last_dirs;
     last_dirs = dirs;
 
     bool play = false;
+    if (page == 0)
+    {
+        // PLAY / OPTIONS
+        if (hit & 3) { main_cursor ^= 1; osoundint.queue_sound(sound::BEEP1); }
+        if (hit & 16)
+        {
+            if (main_cursor == 0) play = true;
+            else { page = 1; cursor = 0; osoundint.queue_sound(sound::BEEP1); }
+        }
+    }
+    else
+    {
     if (hit & 1) { cursor = (cursor + NLINES - 1) % NLINES; osoundint.queue_sound(sound::BEEP1); }
     if (hit & 2) { cursor = (cursor + 1) % NLINES; osoundint.queue_sound(sound::BEEP1); }
     if ((hit & 12) && cursor < L_SAVE) { change(cursor, (hit & 4) ? -1 : 1); osoundint.queue_sound(sound::BEEP1); }
@@ -243,13 +271,18 @@ bool OptMenu::tick()
             message = 90;
             osoundint.queue_sound(sound::BEEP1);
         }
-        else if (cursor == L_PLAY)
-            play = true;
+        else if (cursor == L_BACK)
+        {
+            page = 0;
+            main_cursor = 0;   // back on PLAY
+            osoundint.queue_sound(sound::BEEP1);
+        }
         else
         {
             change(cursor, 1);
             osoundint.queue_sound(sound::BEEP1);
         }
+    }
     }
 
     draw();
