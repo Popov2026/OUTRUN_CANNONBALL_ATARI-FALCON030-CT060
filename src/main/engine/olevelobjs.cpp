@@ -121,6 +121,17 @@ void OLevelObjs::init_entries(uint32_t a4, const uint8_t start_index, const uint
 // Source: 3CB2
 //
 // Input: Default Zoom Value
+#ifdef PLATFORM_ATARI
+// outrun.ini's scenery=0 (engine/osprites.cpp): the roadside object about to be set up is still
+// needed when it is the start lights or the checkpoint sign (draw routines 4, 5, 6) - passing
+// under the top of the checkpoint sign is what gives the extra time (routine 6, below).
+bool OLevelObjs::needed_without_scenery()
+{
+    const uint8_t routine = trackloader.read8(trackloader.scenerymap_data, osprites.seg_spr_addr + osprites.seg_spr_offset1) >> 4;
+    return routine >= 4 && routine <= 6;
+}
+#endif
+
 void OLevelObjs::setup_sprites(uint32_t z)
 {
     // Setup entries that have not yet been enabled

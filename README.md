@@ -204,7 +204,7 @@ Each option is described in [`outrun.ini.example`](outrun.ini.example).
 |---|---|---|---|
 | `shadows` | 0 / 1 | 1 | Shadows under the cars and the scenery (0 gives about +4 % frames/s) |
 | `shadow_min_z` | 0..0x1ff | 0 | With shadows on, only draw them for nearby objects |
-| `scenery` | 0 / 1 | 1 | 0 = no trees, signs or buildings. **By far the biggest speed-up** |
+| `scenery` | 0 / 1 | 1 | 0 = no trees, signs or buildings (the start lights and checkpoint signs stay). **By far the biggest speed-up** |
 | `vscale` | 50..100 | 100 | % of the 224 lines that are computed (67 gives +17 %, 50 gives +26 %) |
 | `road_hres` | 0 / 1 | 0 | Road computed at half horizontal resolution (+5 %) |
 | `cadence` | 0..4 | 0 | Game steps between two frames: 0 = auto, 1 = 30 fps, 2 = 15, 3 = 10, 4 = 7.5 |

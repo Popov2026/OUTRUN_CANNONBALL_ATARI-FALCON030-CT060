@@ -255,7 +255,9 @@ void OSprites::sprite_control()
         if (seg_spr_offset1 < 0)
             seg_spr_offset1 = seg_spr_offset2; // Reload sprite info offset value
 #ifdef PLATFORM_ATARI
-        if (atari_opt.scenery)   // outrun.ini's scenery=0: the roadside objects are never created
+        // outrun.ini's scenery=0: the roadside objects are not created, except the start lights and
+        // the checkpoint sign, which the checkpoint (extra time) needs
+        if (atari_opt.scenery || olevelobjs.needed_without_scenery())
 #endif
         olevelobjs.setup_sprites(0x10400);
     }
@@ -279,7 +281,7 @@ void OSprites::sprite_control()
         if (seg_spr_offset1 < 0)
             seg_spr_offset1 = seg_spr_offset2; // Reload sprite info offset value
 #ifdef PLATFORM_ATARI
-        if (atari_opt.scenery)
+        if (atari_opt.scenery || olevelobjs.needed_without_scenery())
 #endif
         olevelobjs.setup_sprites(0x10000);
     }

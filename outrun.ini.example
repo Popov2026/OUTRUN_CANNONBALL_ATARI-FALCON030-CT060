@@ -14,7 +14,8 @@ shadow_min_z = 0     # With shadows = 1, only objects at least this near get a s
 scenery      = 1     # 1 = roadside scenery drawn: trees, signs, buildings, rocks (default).
                      # 0 = only the road, the traffic and your car, with the sky and the HUD.
                      # The objects are not created at all, so there is nothing to crash into
-                     # beside the road. By far the biggest speed-up: meant for the 68030.
+                     # beside the road. The start lights and the checkpoint signs stay (the
+                     # checkpoint gives the extra time). By far the biggest speed-up: 68030.
 
 vscale       = 100   # Share of the 224 lines that is computed, in percent. Range 50..100.
                      # 100 = every line (default). 67 = two lines out of three, the third repeats

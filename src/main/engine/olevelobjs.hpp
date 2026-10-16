@@ -48,6 +48,9 @@ class OLevelObjs
         void init_timetrial_sprites();
         void init_hiscore_sprites();
         void setup_sprites(uint32_t);
+#ifdef PLATFORM_ATARI
+        bool needed_without_scenery();
+#endif
         void do_sprite_routine();
         void hide_sprite(oentry*);
 

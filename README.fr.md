@@ -210,7 +210,7 @@ Chaque option est décrite dans [`outrun.ini.example`](outrun.ini.example) (en a
 |---|---|---|---|
 | `shadows` | 0 / 1 | 1 | Ombres sous les voitures et le décor (0 donne environ +4 % d'images/s) |
 | `shadow_min_z` | 0..0x1ff | 0 | Avec les ombres, n'en dessine que pour les objets proches |
-| `scenery` | 0 / 1 | 1 | 0 = ni arbres, ni panneaux, ni bâtiments. **De loin le plus gros gain** |
+| `scenery` | 0 / 1 | 1 | 0 = ni arbres, ni panneaux, ni bâtiments (les feux de départ et les panneaux de checkpoint restent). **De loin le plus gros gain** |
 | `vscale` | 50..100 | 100 | % des 224 lignes calculées (67 donne +17 %, 50 donne +26 %) |
 | `road_hres` | 0 / 1 | 0 | Route calculée en demi-résolution horizontale (+5 %) |
 | `cadence` | 0..4 | 0 | Pas de jeu entre deux images : 0 = auto, 1 = 30 i/s, 2 = 15, 3 = 10, 4 = 7,5 |

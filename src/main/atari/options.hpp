@@ -13,7 +13,8 @@
                         the traffic and the player's car are left, with the sky and the HUD. For
                         slower machines. The objects are not just hidden: the engine does not
                         create them (engine/osprites.cpp), so there is nothing to crash into
-                        beside the road either. The start line (banner, lights) is kept.
+                        beside the road either. The start line (banner, lights) and the
+                        checkpoint signs are kept: passing the sign is what gives the extra time.
       vscale      100 lines drawn, in percent of the 224 (100 = all; 67 = two lines out of three are
                         computed and the third repeats the one above; 50 = every other line)
       road_hres     0   0 = full-detail road texture (dashes, edges); 1 = half the columns are

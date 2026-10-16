@@ -9,6 +9,7 @@
     See license.txt for more details.
 ***************************************************************************/
 
+#include <cstdio>
 #include "engine/ohud.hpp"
 #include "engine/omusic.hpp"
 #include "engine/outils.hpp"
@@ -209,6 +210,10 @@ void OStats::init_next_level()
     {
         oinitengine.checkpoint_marker = 0;
         extend_play_timer             = 0x80;
+#ifdef CHECKPOINT_LOG
+        // Test aid: each checkpoint reached, in CHECKPT.TXT.
+        { FILE* lf = fopen("CHECKPT.TXT", "a"); if (lf) { fprintf(lf, "checkpoint, stage %d\r\n", (int)cur_stage); fclose(lf); } }
+#endif
         
         // Calculate Time To Add
         uint16_t time_lookup = (config.engine.dip_time * 40) + oroad.stage_lookup_off;

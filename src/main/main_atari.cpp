@@ -171,6 +171,9 @@ static void tick()
                 // hardcoded glyph bitmaps blitted after palette conversion sidesteps the whole
                 // ROM-tile-encoding question and is guaranteed the same regardless of game state.
                 if (input.has_pressed(Input::PAUSE)) pause_engine = !pause_engine;
+#ifdef CHECKPOINT_LOG
+                outrun.freeze_timer = true;   // test aid: the autoplay always gets to the checkpoints
+#endif
                 // F1: back to the options menu (atari/optmenu.hpp)
                 if (input.f1_down() && !g_quit_confirm) { pause_engine = false; state = STATE_INIT_MENU; }
 #ifdef MENU_SCRIPT
