@@ -1,8 +1,14 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.38 beta
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.39 beta
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
-Changes since v0.37 beta:
+Changes since v0.38 beta:
+  Menu
+  - LINES DRAWN is no longer in the menu: fewer lines made the menu's
+    text unreadable. outrun.ini's vscale still applies in the game, and
+    the menu and credits are always drawn with every line.
+
+Changes in v0.38 beta (since v0.37 beta):
   Menu
   - Escape (or F1) during the game goes back to PLAY / OPTIONS / CREDITS /
     EXIT; EXIT quits. F10 and the QUIT overlay are gone. In the menu,

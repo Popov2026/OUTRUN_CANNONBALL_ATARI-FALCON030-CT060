@@ -1,11 +1,15 @@
 **English** | [Français](#français)
 
-## v0.38 beta — Escape goes back to the menu
+## v0.39 beta — a menu that is always readable
 
 No ROMs and no `.mod` music are included: add your own ROM set (OutRun revision B) in `roms/`, and
 optionally your `.mod` files in `Music/` (see the README).
 
-### What's new since v0.37 beta
+### What's new since v0.38 beta
+- **LINES DRAWN is no longer in the menu**: fewer lines made its text unreadable. `vscale` in `outrun.ini` still
+  applies in the game, and the menu and credits are always drawn with every line.
+
+### v0.38 beta — Escape goes back to the menu (what's new since v0.37 beta)
 - **Escape** (or F1) during the game goes back to PLAY / OPTIONS / CREDITS / EXIT; **EXIT** quits. F10 is gone.
   In the menu, Escape on the options or credits page goes back to the first page.
 - The credits show their beginning for 3 s before they scroll.
@@ -95,12 +99,16 @@ Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatar
 
 ## Français
 
-## v0.38 bêta — Échap ramène au menu
+## v0.39 bêta — un menu toujours lisible
 
 Aucune ROM ni musique `.mod` n'est incluse : ajoute ton propre jeu de ROMs (OutRun révision B) dans `roms/`,
 et éventuellement tes `.mod` dans `Music/` (voir le README).
 
-### Nouveautés depuis la v0.37 bêta
+### Nouveautés depuis la v0.38 bêta
+- **LINES DRAWN n'est plus dans le menu** : moins de lignes rendait son texte illisible. `vscale` dans `outrun.ini`
+  s'applique toujours en jeu, et le menu et les crédits sont toujours dessinés avec toutes leurs lignes.
+
+### v0.38 bêta — Échap ramène au menu (nouveautés depuis la v0.37 bêta)
 - **Échap** (ou F1) pendant le jeu ramène au menu PLAY / OPTIONS / CREDITS / EXIT ; **EXIT** quitte le jeu. F10
   est retiré. Dans le menu, Échap sur la page des options ou des crédits revient à la première page.
 - Les crédits restent 3 s sur leur début avant de défiler.
