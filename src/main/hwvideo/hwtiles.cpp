@@ -207,6 +207,20 @@ void hwtiles::restore_tiles()
 #endif
 }
 
+#ifdef PLATFORM_ATARI
+void hwtiles::set_text_glyph(uint8_t code, const uint32_t* rows)
+{
+    const uint32_t first = (((uint32_t)code + tile_banks[0] * 0x1000) & (NUM_TILES - 1)) << 3;
+    for (int r = 0; r < 8; r++)
+    {
+        tiles[first + r] = rows[r];
+#ifdef TILE_DEC
+        if (tdec) tdec_row(tiles, first + r);
+#endif
+    }
+}
+#endif
+
 // Set Tilemap X Clamp
 //
 // This is used for the widescreen mode, in order to clamp the tilemap to
@@ -406,10 +420,21 @@ void hwtiles::render_tile_layer(uint16_t* buf, uint8_t page_index, uint8_t prior
 #ifdef PERF_PRINT
 uint32_t g_txt_fast = 0, g_txt_clip = 0;   // text tiles drawn by the fast / clipping routine (statistics)
 #endif
+// Text moved by whole pixels (atari/optmenu.cpp): g_text_dx[row] pixels to the right, and the rows
+// g_text_scroll_top..g_text_scroll_bot drawn g_text_scroll_y pixels higher, shown only between
+// the top of row g_text_scroll_top and the top of row g_text_scroll_bot (the bottom row comes in
+// as the top one goes out). All 0 / -1 outside the menu: the game's text is drawn as before.
+int8_t g_text_dx[28];
+int g_text_scroll_top = -1, g_text_scroll_bot = -1, g_text_scroll_y = 0;
+static unsigned char g_scroll_rows[232];
+
 void hwtiles::render_text_layer(uint16_t* buf, uint8_t priority_draw)
 {
     const int W = config.s16_width;
     g_clip_rows = g_row_draw;   // text is drawn over the road: every drawn row
+    if (g_text_scroll_top >= 0)
+        for (int y = 0; y < 232; y++)
+            g_scroll_rows[y] = (y >= 8 * g_text_scroll_top && y < 8 * g_text_scroll_bot) ? g_row_draw[y] : 0;
 
     // Columns 24..63 are the ones that land inside 0..319 (x = 8*mx - 192); rows above 27 are below the screen.
     for (int my = 0; my < 28; my++)
@@ -433,7 +458,16 @@ void hwtiles::render_text_layer(uint16_t* buf, uint8_t priority_draw)
             int x = 8 * mx - 192;
 
 #ifndef LOWRES
-            if (x > 7 && x < (s16_width_noscale - 8) && y > 7 && y <= (S16_HEIGHT - 8))
+            const bool scrolled = my >= g_text_scroll_top && my <= g_text_scroll_bot && g_text_scroll_top >= 0;
+            if (g_text_dx[my] || scrolled)
+            {
+                // moved by whole pixels: drawn clipped, the scrolled rows only inside their window
+                g_clip_rows = scrolled ? g_scroll_rows : g_row_draw;
+                atari_tile8_clip(buf, tiles + (Code << 3), (uint32_t)Colour << 3, W * 2, x + config.s16_x_off + g_text_dx[my],
+                                 scrolled ? y - g_text_scroll_y : y, W, S16_HEIGHT);
+                g_clip_rows = g_row_draw;
+            }
+            else if (x > 7 && x < (s16_width_noscale - 8) && y > 7 && y <= (S16_HEIGHT - 8))
             {
 #ifdef PERF_PRINT
                 g_txt_fast++;

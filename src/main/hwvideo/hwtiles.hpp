@@ -23,6 +23,11 @@ public:
     void init(uint8_t* src_tiles, const bool hires);
     void patch_tiles(RomLoader* patch);
     void restore_tiles();
+#ifdef PLATFORM_ATARI
+    // Replaces the 8 rows of a text-layer character (atari/optmenu.cpp); restore_tiles() puts the
+    // ROM's back.
+    void set_text_glyph(uint8_t code, const uint32_t* rows);
+#endif
     void set_x_clamp(const uint16_t);
     void update_tile_values();
     void render_tile_layer(uint16_t*, uint8_t, uint8_t);

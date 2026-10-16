@@ -9,8 +9,8 @@
     outrun.ini, and starts the game.
 
     The first page has PLAY (selected), OPTIONS, which opens the options
-    page, and CREDITS (thanks, scrolling under the logo; Enter / fire goes
-    back). There up / down (keys or joystick) pick a line, left / right change
+    page, CREDITS (thanks scrolling under the logo to Last Wave; Enter /
+    fire goes back) and EXIT (quits, as F10 then up). There up / down (keys or joystick) pick a line, left / right change
     it, Enter or fire (pad A) steps it to the next value; SAVE SETTINGS
     writes outrun.ini, BACK goes back to PLAY / OPTIONS.
 
@@ -20,17 +20,19 @@
 class OptMenu
 {
 public:
-    OptMenu() : page(0), main_cursor(0), cursor(0), frame(0), message(0), last_dirs(0), saved_ok(false) {}
+    OptMenu() : page(0), main_cursor(0), cursor(0), frame(0), message(0), last_dirs(0), held(0), saved_ok(false) {}
     void init();     // sets the screen up (logo, road) and the sound chips (for the beeps)
-    bool tick();     // one game step; true when PLAY was chosen
+    enum { MENU_NONE, MENU_PLAY, MENU_EXIT };
+    int tick();      // one game step; MENU_PLAY or MENU_EXIT when chosen
 
 private:
-    int page;          // 0: PLAY / OPTIONS, 1: the options
-    int main_cursor;   // page 0: 0 = PLAY, 1 = OPTIONS
+    int page;          // 0: PLAY / OPTIONS / CREDITS / EXIT, 1: the options, 2: the credits
+    int main_cursor;   // page 0: the line
     int cursor;        // page 1: the line
     int frame;
     int message;     // steps the "SAVED" line stays up
     int last_dirs;   // up, down, left, right, select last step (edges only)
+    int held;        // steps the same direction has been held (repeat)
     bool saved_ok;
 
     void draw();

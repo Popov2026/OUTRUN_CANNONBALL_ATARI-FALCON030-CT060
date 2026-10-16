@@ -192,7 +192,8 @@ Ces ports acceptent un pad Jaguar, ou un joystick classique branché sur un adap
 
 Le jeu démarre sur un menu, sur le logo OutRun et une route qui défile (F1 le rappelle pendant le
 jeu) : **PLAY** (sélectionné : Entrée ou fire lance le jeu), en dessous **OPTIONS**, qui ouvre
-la page des options, et **CREDITS**, les remerciements qui défilent sous le logo. Là, ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent,
+la page des options, **CREDITS**, les remerciements qui défilent sous le logo sur Last Wave, et
+**EXIT**, qui quitte le jeu (comme F10 puis ↑). Là, ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent,
 Entrée ou fire passe à la valeur suivante ; **BACK** revient à PLAY / OPTIONS. La page des options
 règle les options qui s'appliquent tout de suite : images par seconde (AUTO, 30,
 25, 20, 15, 10, 7,5), lignes calculées (100, 75, 67, 50 %), détail de la route, décor, ombres
@@ -455,8 +456,9 @@ Jaguar).
 - **Chaîne de compilation** : le compilateur croisé `m68k-atari-mint` GCC 4.6.4 de Vincent
   Rivière. Le développement a été fait sous Cygwin, avec le compilateur installé dans
   `/opt/cross-mint`.
-- **Martial Daviaud**, pour ses précieux conseils et tests.
-- **Claude** (Anthropic), pour son aide sur le code.
+- **Marss, GCoons & Evil** de [www.atari-forum.com](https://www.atari-forum.com), pour leurs
+  précieux conseils et tests.
+- **Anthropic Claude**, pour son aide sur le code.
 - **Portage Atari Falcon** (Falcon 030 / CT60 / CT63) : Popov2026.
 
 Les mêmes remerciements défilent dans la page **CREDITS** du menu du jeu.

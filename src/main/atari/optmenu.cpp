@@ -30,7 +30,12 @@
 #include "atari/input.hpp"
 #include "atari/modplayer.hpp"
 
+// atari text layer offsets (hwvideo/hwtiles.cpp)
+extern int8_t g_text_dx[28];
+extern int g_text_scroll_top, g_text_scroll_bot, g_text_scroll_y;
+
 OptMenu optmenu;
+static void outline_glyphs(bool on);
 
 static const int16_t  LOGO_Y       = -60;     // as frontend/menu.cpp
 static const uint16_t HORIZON_DEST = 0x3A0;
@@ -41,24 +46,24 @@ enum { L_PICTURES, L_LINES, L_ROAD, L_SCENERY, L_SHADOWS, L_MUSIC, L_ACCEL, L_BR
 static const char* LABELS[NLINES] = {
     "PICTURES PER SEC", "LINES DRAWN", "ROAD DETAIL", "SCENERY", "SHADOWS", "MUSIC",
     "JOY ACCELERATE", "JOY BRAKE", "JOY GEAR CHANGE", "SAVE SETTINGS", "BACK" };
-static const char* MAIN_LABELS[3] = { "PLAY", "OPTIONS", "CREDITS" };
+static const char* MAIN_LABELS[] = { "PLAY", "OPTIONS", "CREDITS", "EXIT" };
+static const int NMAIN = sizeof(MAIN_LABELS) / sizeof(MAIN_LABELS[0]);
 
-// The credits page, scrolling up under the logo.
+// The credits page, scrolling up under the logo (a header, then its names).
 static const char* CREDITS[] = {
-    "THANKS TO", "",
-    "OUTRUN  1986  SEGA AM2", "YU SUZUKI AND THE AM2 TEAM", "MUSIC  HIROSHI KAWAGUCHI", "",
-    "CANNONBALL", "ENGINE AND OUTRUN REVERSE ENGINEERING", "CHRIS WHITE AND THE CANNONBALL TEAM", "",
-    "VINCENT RIVIERE", "M68K-ATARI-MINT GCC 4.6.4", "CROSS COMPILER",
-    "DEVELOPED UNDER CYGWIN", "COMPILER IN OPT CROSS-MINT", "",
-    "YM2151 EMULATION", "JAREK BURCZYNSKI - MAME", "",
-    "DSP SOUNDTRACKER REPLAY", "SIMPLET - ABSTRACT", "",
-    "DSPMOD 3.4", "BITMASTER - TCE", "",
-    "PRECIOUS ADVICE AND TESTS", "MARTIAL DAVIAUD", "",
-    "AND CLAUDE", "", "",
-    "ATARI FALCON PORT", "POPOV2026", "", "", "" };
+    "ORIGINAL GAME", "OUTRUN  1986  SEGA AM2", "YU SUZUKI AND THE AM2 TEAM", "",
+    "MUSIC", "HIROSHI KAWAGUCHI", "",
+    "ENGINE", "CANNONBALL BY CHRIS WHITE", "AND THE CANNONBALL TEAM", "OUTRUN REVERSE ENGINEERING", "",
+    "CODE", "ATARI FALCON PORT  POPOV2026", "",
+    "SOUND", "YM2151 EMULATION", "JAREK BURCZYNSKI FOR MAME", "DSP SOUNDTRACKER REPLAY", "SIMPLET OF ABSTRACT",
+    "DSPMOD 3.4", "BITMASTER OF TCE", "",
+    "TOOLS", "M68K-ATARI-MINT GCC 4.6.4", "CROSS COMPILER BY VINCENT RIVIERE", "DEVELOPED UNDER CYGWIN",
+    "COMPILER IN /OPT/CROSS-MINT", "",
+    "SPECIAL THANKS", "PRECIOUS ADVICE AND TESTS", "MARSS, GCOONS & EVIL", "FROM WWW.ATARI-FORUM.COM", "",
+    "ANTHROPIC CLAUDE", "", "", "", "" };
 static const int NCREDITS = sizeof(CREDITS) / sizeof(CREDITS[0]);
-static const int CREDIT_ROWS = 13;     // rows 14..26, under the logo
-static const int CREDIT_STEP = 24;     // game steps per row of scrolling
+static const int CREDIT_TOP = 14, CREDIT_BOT = 26;   // text rows: 14..25 shown, 26 coming in
+static const int CREDIT_SPEED = 2;                   // game steps per pixel of scrolling
 
 // Picture rate: cadence (game steps per picture) or a steady fps (see options.hpp).
 static const struct { const char* name; int cadence, fps; } RATES[] = {
@@ -103,6 +108,7 @@ void OptMenu::init()
     video.sprite_layer->reset();
     video.clear_text_ram();
     video.tile_layer->restore_tiles();
+    outline_glyphs(true);
     ologo.enable(LOGO_Y);
 
     // palette, road and colours for the background, as frontend/menu.cpp
@@ -180,28 +186,84 @@ static void upper(char* s)
     for (; *s; s++) if (*s >= 'a' && *s <= 'z') *s -= 0x20;
 }
 
+// The ROM's ',', '&', '-' and '+' have no black outline, unlike its letters (black outline, value 7,
+// filled with a top-to-bottom gradient, 1 at the top to 6 at the bottom), and it has no '/': these
+// are drawn the letters' way while the menu is up ('.' is outlined already).
+static void outline_glyphs(bool on)
+{
+    if (!on) { video.tile_layer->restore_tiles(); return; }
+    static const char* COMMA[8] = { "........", "........", "........", "...7777.", "...7337.", "...7447.", "...7557.", "..777..." };
+    static const char* AMP[8]   = { "..777...", ".71117..", ".72727..", ".7737...", "733737..", "7447747.", ".7555757", "..777.7." };
+    static const char* DASH[8]  = { "........", "........", "........", ".777777.", ".733337.", ".744447.", ".777777.", "........" };
+    static const char* PLUS[8]  = { "........", "...77...", "..7117..", ".772277.", ".733337.", ".774477.", "..7557..", "...77..." };
+    static const char* SLASH[8] = { "....777.", "...7117.", "...727..", "..737...", "..747...", ".757....", ".767....", ".777...." };
+    static const struct { uint8_t code; const char* const* rows; } GLYPHS[] = {
+        { ',', COMMA }, { '&', AMP }, { '-', DASH }, { '+', PLUS }, { '/', SLASH } };
+    for (unsigned g = 0; g < sizeof(GLYPHS) / sizeof(GLYPHS[0]); g++)
+    {
+        uint32_t rows[8];
+        for (int r = 0; r < 8; r++)
+        {
+            uint32_t v = 0;
+            for (int x = 0; x < 8; x++)
+            {
+                const char c = GLYPHS[g].rows[r][x];
+                v = (v << 4) | (c == '.' ? 0 : (uint32_t)(c - '0'));
+            }
+            rows[r] = v;
+        }
+        video.tile_layer->set_text_glyph(GLYPHS[g].code, rows);
+    }
+}
+
+// Half a character (4 pixels) to the right for the even-length lines of the first page, so that
+// they are centred like the odd-length ones (the text layer has 8-pixel columns).
+static void centre_row(int y, const char* s)
+{
+    g_text_dx[y] = (strlen(s) & 1) ? 0 : 4;
+}
+
 void OptMenu::draw()
 {
     video.clear_text_ram();
+#ifdef MENU_FONT_TEST
+    // Test aid: every tile code of the text layer, 32 per row (codes 0x00.. on rows 12, 14, ...).
+    for (int c = 0; c < 256; c++)
+    {
+        uint32_t adr = ohud.translate(4 + (c & 31), 12 + 2 * (c >> 5));
+        video.write_text16(&adr, (ohud.GREEN << 8) | c);
+    }
+    return;
+#endif
+    for (int y = 0; y < 28; y++) g_text_dx[y] = 0;
+    g_text_scroll_top = g_text_scroll_bot = -1;
+    const uint16_t col = ohud.GREEN;
     if (page == 2)
     {
-        // credits: one row up every CREDIT_STEP steps, round and round; BACK below
-        const int top = frame / CREDIT_STEP;
-        for (int r = 0; r < CREDIT_ROWS; r++)
+        // credits: one pixel up every CREDIT_SPEED steps, round and round; BACK below
+        const int pix = frame / CREDIT_SPEED;
+        const int top = pix / 8;
+        g_text_scroll_top = CREDIT_TOP;
+        g_text_scroll_bot = CREDIT_BOT;
+        g_text_scroll_y = pix & 7;
+        for (int r = 0; r <= CREDIT_BOT - CREDIT_TOP; r++)
         {
             const char* s = CREDITS[(top + r) % NCREDITS];
-            if (*s) ohud.blit_text_new(20 - (int)strlen(s) / 2, 14 + r, s, r == 0 ? ohud.GREY : ohud.GREEN);
+            if (*s) ohud.blit_text_new(20 - (int)strlen(s) / 2, CREDIT_TOP + r, s, col);
+            g_text_dx[CREDIT_TOP + r] = (strlen(s) & 1) ? 0 : 4;
         }
-        ohud.blit_text_new(18, 27, "BACK", ohud.PINK);
+        ohud.blit_text_new(18, 27, "BACK", col);
         video.write_text32(ohud.translate(15, 27), roms.rom0.read32(TILES_MINICARS1));
+        centre_row(27, "BACK");
         return;
     }
     if (page == 0)
     {
-        for (int i = 0; i < 3; i++)
+        for (int i = 0; i < NMAIN; i++)
         {
-            const int x = 20 - (int)strlen(MAIN_LABELS[i]) / 2, y = 17 + 2 * i;
-            ohud.blit_text_new(x, y, MAIN_LABELS[i], i == main_cursor ? ohud.PINK : ohud.GREEN);
+            const int x = 20 - (int)strlen(MAIN_LABELS[i]) / 2, y = 16 + 2 * i;
+            ohud.blit_text_new(x, y, MAIN_LABELS[i], col);
+            centre_row(y, MAIN_LABELS[i]);
             if (i == main_cursor)
                 video.write_text32(ohud.translate(x - 3, y), roms.rom0.read32(TILES_MINICARS1));
         }
@@ -230,10 +292,12 @@ void OptMenu::draw()
             case L_GEAR:    atari_joy_name(atari_opt.joy_gear, value); break;
         }
         upper(value);
-        const uint16_t col = i == cursor ? ohud.PINK : ohud.GREEN;
         const int y = y0 + i + (i >= L_SAVE ? 1 : 0);   // a blank line before SAVE / BACK
         if (i >= L_SAVE)
+        {
             ohud.blit_text_new(20 - (int)strlen(LABELS[i]) / 2, y, LABELS[i], col);
+            centre_row(y, LABELS[i]);
+        }
         else
         {
             ohud.blit_text_new(3, y, LABELS[i], col);
@@ -244,15 +308,37 @@ void OptMenu::draw()
             video.write_text32(ohud.translate(i >= L_SAVE ? 20 - (int)strlen(LABELS[i]) / 2 - 3 : 0, y), roms.rom0.read32(TILES_MINICARS1));
     }
     if (message)
-        ohud.blit_text_new(saved_ok ? 13 : 10, 27, saved_ok ? "SETTINGS SAVED" : "OUTRUN.INI NOT WRITTEN", ohud.GREY);
+    {
+        const char* m = saved_ok ? "SETTINGS SAVED" : "OUTRUN.INI NOT WRITTEN";
+        ohud.blit_text_new(20 - (int)strlen(m) / 2, 27, m, col);
+        centre_row(27, m);
+    }
 }
 
-bool OptMenu::tick()
+// The credits' music: Last Wave (Music\TRACK4.MOD instead with mod = 1, as ohiscore.cpp does), or
+// silence again.
+static void credits_music(bool on)
+{
+    if (on)
+    {
+        if (!atari_opt.music) return;
+        if (!(atari_opt.mod && modplayer.load("Music\\TRACK4.MOD", config.sound.rate)))
+            osoundint.queue_sound(sound::MUSIC_LASTWAVE);
+    }
+    else
+    {
+        modplayer.stop_all();
+        osoundint.queue_sound(sound::FM_RESET);
+    }
+}
+
+int OptMenu::tick()
 {
     frame++;
     if (message) message--;
 
-    // edges of up, down, left, right, select (keyboard and joystick)
+    // up, down, left, right, select (keyboard and joystick); held directions repeat after
+    // 12 steps, every 4 steps
     const int js = input.joy_src;
     const int dirs = (input.is_pressed(Input::UP)    || (js & JOYSRC_UP)   ? 1 : 0)
                    | (input.is_pressed(Input::DOWN)  || (js & JOYSRC_DOWN) ? 2 : 0)
@@ -282,58 +368,72 @@ bool OptMenu::tick()
         if (t == 40 || t == 50) scripted = 2;
         if (t == 60) scripted = 16;
         extern bool g_take_screenshot;
-        if (t == 80 || t == 300 || t == 600) g_take_screenshot = true;
+        if (t == 30 || t == 200 || t == 203 || t == 206 || t == 500 || t == 800) g_take_screenshot = true;
     }
 #endif
-    const int hit = (dirs | scripted) & ~last_dirs;
+    int hit = (dirs | scripted) & ~last_dirs;
+    if ((dirs & 15) && (dirs & 15) == (last_dirs & 15))
+    {
+        if (++held >= 12 && (held - 12) % 4 == 0) hit |= dirs & 15;
+    }
+    else
+        held = 0;
     last_dirs = dirs;
 
-    bool play = false;
+    int action = MENU_NONE;
     if (page == 0)
     {
-        // PLAY / OPTIONS / CREDITS
-        if (hit & 1) { main_cursor = (main_cursor + 2) % 3; osoundint.queue_sound(sound::BEEP1); }
-        if (hit & 2) { main_cursor = (main_cursor + 1) % 3; osoundint.queue_sound(sound::BEEP1); }
+        // PLAY / OPTIONS / CREDITS / EXIT
+        if (hit & 1) { main_cursor = (main_cursor + NMAIN - 1) % NMAIN; osoundint.queue_sound(sound::BEEP1); }
+        if (hit & 2) { main_cursor = (main_cursor + 1) % NMAIN; osoundint.queue_sound(sound::BEEP1); }
         if (hit & 16)
         {
-            if (main_cursor == 0) play = true;
+            if (main_cursor == 0) action = MENU_PLAY;
             else if (main_cursor == 1) { page = 1; cursor = 0; osoundint.queue_sound(sound::BEEP1); }
-            else { page = 2; frame = 0; osoundint.queue_sound(sound::BEEP1); }
+            else if (main_cursor == 2) { page = 2; frame = 0; credits_music(true); }
+            else action = MENU_EXIT;
         }
     }
     else if (page == 2)
     {
         // credits: Enter / fire goes back
-        if (hit & 16) { page = 0; main_cursor = 0; osoundint.queue_sound(sound::BEEP1); }
+        if (hit & 16) { credits_music(false); page = 0; osoundint.queue_sound(sound::BEEP1); }
     }
     else
     {
-    if (hit & 1) { cursor = (cursor + NLINES - 1) % NLINES; osoundint.queue_sound(sound::BEEP1); }
-    if (hit & 2) { cursor = (cursor + 1) % NLINES; osoundint.queue_sound(sound::BEEP1); }
-    if ((hit & 12) && cursor < L_SAVE) { change(cursor, (hit & 4) ? -1 : 1); osoundint.queue_sound(sound::BEEP1); }
-    if (hit & 16)
-    {
-        if (cursor == L_SAVE)
+        if (hit & 1) { cursor = (cursor + NLINES - 1) % NLINES; osoundint.queue_sound(sound::BEEP1); }
+        if (hit & 2) { cursor = (cursor + 1) % NLINES; osoundint.queue_sound(sound::BEEP1); }
+        if ((hit & 12) && cursor < L_SAVE) { change(cursor, (hit & 4) ? -1 : 1); osoundint.queue_sound(sound::BEEP1); }
+        if (hit & 16)
         {
-            saved_ok = atari_save_options("outrun.ini");
-            message = 90;
-            osoundint.queue_sound(sound::BEEP1);
+            if (cursor == L_SAVE)
+            {
+                saved_ok = atari_save_options("outrun.ini");
+                message = 90;
+                osoundint.queue_sound(sound::BEEP1);
+            }
+            else if (cursor == L_BACK)
+            {
+                page = 0;
+                main_cursor = 0;   // back on PLAY
+                osoundint.queue_sound(sound::BEEP1);
+            }
+            else
+            {
+                change(cursor, 1);
+                osoundint.queue_sound(sound::BEEP1);
+            }
         }
-        else if (cursor == L_BACK)
-        {
-            page = 0;
-            main_cursor = 0;   // back on PLAY
-            osoundint.queue_sound(sound::BEEP1);
-        }
-        else
-        {
-            change(cursor, 1);
-            osoundint.queue_sound(sound::BEEP1);
-        }
-    }
     }
 
     draw();
+    if (action != MENU_NONE)
+    {
+        // the text and the ROM's characters back in place for the game
+        outline_glyphs(false);
+        for (int y = 0; y < 28; y++) g_text_dx[y] = 0;
+        g_text_scroll_top = g_text_scroll_bot = -1;
+    }
 
     // move the horizon in, then scroll the road (frontend/menu.cpp, at 30 steps a second)
     if (oroad.horizon_base > HORIZON_DEST)
@@ -364,5 +464,5 @@ bool OptMenu::tick()
     osprites.sprite_copy();
     osprites.update_sprites();
     oroad.tick();
-    return play;
+    return action;
 }

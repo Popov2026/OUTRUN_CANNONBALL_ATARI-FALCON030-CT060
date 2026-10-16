@@ -266,8 +266,12 @@ static void tick()
                 if (input.has_pressed(Input::UP)) state = STATE_QUIT;
                 if (input.has_pressed(Input::DOWN)) g_quit_confirm = false;
             }
-            else if (optmenu.tick())
-                state = STATE_INIT_GAME;
+            else
+            {
+                const int action = optmenu.tick();
+                if (action == OptMenu::MENU_PLAY) state = STATE_INIT_GAME;
+                if (action == OptMenu::MENU_EXIT) state = STATE_QUIT;   // as F10 then up
+            }
             input.frame_done();
 #ifndef NO_SOUND
             if (!audio.irq_mode()) { audio.fm_before_driver(); osoundint.tick(); }
