@@ -1,8 +1,21 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.36 beta
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.37 beta
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
-Changes since v0.35 beta:
+Changes since v0.36 beta:
+  Menu
+  - EXIT, under CREDITS: quits the game (as F10 then up).
+  - The credits scroll pixel by pixel, with headers (ORIGINAL GAME, MUSIC,
+    ENGINE, CODE, SOUND, TOOLS, SPECIAL THANKS), to Last Wave (TRACK4.MOD
+    with mod = 1). Special thanks to Marss, GCoons & Evil from
+    www.atari-forum.com, and Anthropic Claude.
+  - All the menu text in green; holding a direction repeats it.
+  - PLAY and EXIT centred like the other lines (half a character to the
+    right).
+  - ',', '&', '-', '+' and '/' drawn with a black outline like the
+    letters while the menu is up (the ROM's have none, or no '/').
+
+Changes in v0.36 beta (since v0.35 beta):
   Game
   - scenery = 0 (SCENERY OFF in the menu) no longer removes the
     checkpoints: the extra time is given when the car passes the top of

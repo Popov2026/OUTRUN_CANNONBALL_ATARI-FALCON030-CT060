@@ -1,11 +1,18 @@
 **English** | [Français](#français)
 
-## v0.36 beta — checkpoints back with SCENERY OFF
+## v0.37 beta — menu: EXIT, smooth credits to Last Wave
 
 No ROMs and no `.mod` music are included: add your own ROM set (OutRun revision B) in `roms/`, and
 optionally your `.mod` files in `Music/` (see the README).
 
-### What's new since v0.35 beta
+### What's new since v0.36 beta
+- **EXIT** under CREDITS: quits the game (as F10 then ↑).
+- **Credits** scrolling pixel by pixel, with headers (ORIGINAL GAME, MUSIC, ENGINE, CODE, SOUND, TOOLS, SPECIAL
+  THANKS), to **Last Wave**. Special thanks to Marss, GCoons & Evil from www.atari-forum.com, and Anthropic Claude.
+- All the menu text in green; holding a direction repeats it; PLAY and EXIT centred like the other lines.
+- `,` `&` `-` `+` `/` drawn with a black outline like the letters in the menu.
+
+### v0.36 beta — checkpoints back with SCENERY OFF (what's new since v0.35 beta)
 - **Checkpoints work again with `scenery = 0` (SCENERY OFF in the menu).** The extra time is given when the car
   passes the top of the checkpoint sign, a roadside object: with the scenery off no sign was created, so no
   checkpoint was ever reached and the game always ran out of time. The start lights and the checkpoint signs are
@@ -82,12 +89,20 @@ Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatar
 
 ## Français
 
-## v0.36 bêta — les checkpoints reviennent avec SCENERY OFF
+## v0.37 bêta — menu : EXIT, crédits fluides sur Last Wave
 
 Aucune ROM ni musique `.mod` n'est incluse : ajoute ton propre jeu de ROMs (OutRun révision B) dans `roms/`,
 et éventuellement tes `.mod` dans `Music/` (voir le README).
 
-### Nouveautés depuis la v0.35 bêta
+### Nouveautés depuis la v0.36 bêta
+- **EXIT** sous CREDITS : quitte le jeu (comme F10 puis ↑).
+- **Crédits** qui défilent pixel par pixel, avec des entêtes (ORIGINAL GAME, MUSIC, ENGINE, CODE, SOUND, TOOLS,
+  SPECIAL THANKS), sur **Last Wave**. Remerciements à Marss, GCoons & Evil de www.atari-forum.com, et à Anthropic
+  Claude.
+- Tout le texte du menu en vert ; une direction maintenue se répète ; PLAY et EXIT centrés comme les autres lignes.
+- `,` `&` `-` `+` `/` dessinés avec un contour noir comme les lettres dans le menu.
+
+### v0.36 bêta — les checkpoints reviennent avec SCENERY OFF (nouveautés depuis la v0.35 bêta)
 - **Les checkpoints marchent de nouveau avec `scenery = 0` (SCENERY OFF dans le menu).** Le temps en plus est donné
   quand la voiture passe sous le haut du panneau CHECKPOINT, qui est un objet du bord de route : décor coupé, aucun
   panneau n'était créé, donc aucun checkpoint n'était atteint et le temps finissait toujours par manquer. Les feux
