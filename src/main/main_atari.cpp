@@ -135,12 +135,8 @@ static void quit_func(int code)
 // instead of draining an SDL event queue.
 static void tick()
 {
-    // Escape or F10: raise the "QUIT" confirmation overlay (drawn in atari/video_falcon.cpp's
-    // Render::draw_frame(), see g_quit_confirm there) instead of quitting immediately - resolved
-    // below by UP/DOWN once state==STATE_GAME. Reads the interrupt-maintained scancode table
-    // directly (Input::escape_down()/f10_down(), see atari/input.hpp) - one byte-array read each.
-    if (input.escape_down() || input.f10_down())
-        g_quit_confirm = true;
+    // (Escape goes back to the menu, whose EXIT quits: see STATE_GAME below. The "QUIT"
+    // confirmation overlay, g_quit_confirm, is no longer raised.)
 
     frame++;
 
@@ -174,8 +170,8 @@ static void tick()
 #ifdef CHECKPOINT_LOG
                 outrun.freeze_timer = true;   // test aid: the autoplay always gets to the checkpoints
 #endif
-                // F1: back to the options menu (atari/optmenu.hpp)
-                if (input.f1_down() && !g_quit_confirm) { pause_engine = false; state = STATE_INIT_MENU; }
+                // Escape (or F1): back to the menu (atari/optmenu.hpp), whose EXIT quits
+                if ((input.escape_down() || input.f1_down()) && !g_quit_confirm) { pause_engine = false; state = STATE_INIT_MENU; }
 #ifdef MENU_SCRIPT
                 { static int n = 0; if (++n == 600) { pause_engine = false; state = STATE_INIT_MENU; } }   // test: F1 after 20 s of game
 #endif

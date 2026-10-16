@@ -162,8 +162,7 @@ en mode démo, sans menu. Appuie sur **Entrée** pour mettre une pièce et lance
 | V | Changer de vue |
 | P | Pause (affiche « PAUSE ») |
 | F9 | Capture d'écran (`SHOTnnnn.PNG` dans le dossier du jeu) |
-| F1 | Retour au menu des options |
-| Échap / F10 | Quitter (confirmer avec ↑, annuler avec ↓) |
+| Échap (ou F1) | Retour au menu (PLAY / OPTIONS / CREDITS / EXIT) ; EXIT quitte le jeu |
 
 ### Joystick standard (prise DB9, port joystick, pas le port souris)
 
@@ -190,10 +189,10 @@ Ces ports acceptent un pad Jaguar, ou un joystick classique branché sur un adap
 
 ## Menu des options
 
-Le jeu démarre sur un menu, sur le logo OutRun et une route qui défile (F1 le rappelle pendant le
+Le jeu démarre sur un menu, sur le logo OutRun et une route qui défile (Échap ou F1 le rappelle pendant le
 jeu) : **PLAY** (sélectionné : Entrée ou fire lance le jeu), en dessous **OPTIONS**, qui ouvre
 la page des options, **CREDITS**, les remerciements qui défilent sous le logo sur Last Wave, et
-**EXIT**, qui quitte le jeu (comme F10 puis ↑). Là, ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent,
+**EXIT**, qui quitte le jeu. Là, ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent,
 Entrée ou fire passe à la valeur suivante ; **BACK** revient à PLAY / OPTIONS. La page des options
 règle les options qui s'appliquent tout de suite : images par seconde (AUTO, 30,
 25, 20, 15, 10, 7,5), lignes calculées (100, 75, 67, 50 %), détail de la route, décor, ombres

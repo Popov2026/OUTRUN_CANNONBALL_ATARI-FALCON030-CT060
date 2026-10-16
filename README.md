@@ -158,8 +158,7 @@ with no menu. Press **Return** to insert a coin and start a race.
 | V | Change view |
 | P | Pause (shows "PAUSE") |
 | F9 | Screenshot (`SHOTnnnn.PNG` in the game's folder) |
-| F1 | Back to the options menu |
-| Esc / F10 | Quit (confirm with ↑, cancel with ↓) |
+| Esc (or F1) | Back to the menu (PLAY / OPTIONS / CREDITS / EXIT); EXIT quits |
 
 ### Standard joystick (DB9 socket, the joystick port, not the mouse port)
 
@@ -186,10 +185,10 @@ These ports take a Jaguar pad, or a plain joystick on an adapter:
 
 ## Options menu
 
-The game starts on a menu over the OutRun logo and a scrolling road (F1 brings it back during the
+The game starts on a menu over the OutRun logo and a scrolling road (Esc or F1 brings it back during the
 game): **PLAY** (selected: Return or fire starts the game), **OPTIONS** below it, which opens
 the options page, **CREDITS**, the thanks scrolling under the logo to Last Wave, and **EXIT**,
-which quits (as F10 then ↑). There ↑ / ↓ (keys or joystick) pick a line, ← / → change it, Return or fire
+which quits. There ↑ / ↓ (keys or joystick) pick a line, ← / → change it, Return or fire
 steps it to the next value; **BACK** goes back to PLAY / OPTIONS. The options page changes the options that take effect at once: pictures per second (AUTO, 30, 25, 20, 15, 10,
 7.5), lines drawn (100, 75, 67, 50 %), road detail, scenery, shadows (all, near ones only, none),
 music, and what the joystick's up / down / fire / pad buttons do. **SAVE SETTINGS** writes them

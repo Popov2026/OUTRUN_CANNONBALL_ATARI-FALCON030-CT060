@@ -1,7 +1,7 @@
 #pragma once
 
 /***************************************************************************
-    Options menu of the Atari port: shown at start-up (and with F1 during the
+    Options menu of the Atari port: shown at start-up (and with Escape or F1 during the
     game), over the OutRun logo and the scrolling road of Cannonball's own
     menu (frontend/menu.cpp, not built here). It changes the outrun.ini
     options that take effect at once (picture rate, lines drawn, road
@@ -10,7 +10,8 @@
 
     The first page has PLAY (selected), OPTIONS, which opens the options
     page, CREDITS (thanks scrolling under the logo to Last Wave; Enter /
-    fire goes back) and EXIT (quits, as F10 then up). There up / down (keys or joystick) pick a line, left / right change
+    fire / Escape go back) and EXIT (quits). Escape during the game comes back
+    here, Escape on a page goes back to the first one. There up / down (keys or joystick) pick a line, left / right change
     it, Enter or fire (pad A) steps it to the next value; SAVE SETTINGS
     writes outrun.ini, BACK goes back to PLAY / OPTIONS.
 

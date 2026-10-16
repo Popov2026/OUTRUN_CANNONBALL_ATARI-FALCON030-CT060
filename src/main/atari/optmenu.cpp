@@ -344,7 +344,8 @@ int OptMenu::tick()
                    | (input.is_pressed(Input::DOWN)  || (js & JOYSRC_DOWN) ? 2 : 0)
                    | (input.is_pressed(Input::LEFT)  ? 4 : 0)
                    | (input.is_pressed(Input::RIGHT) ? 8 : 0)
-                   | (input.is_pressed(Input::START) || (js & JOYSRC_FIRE) ? 16 : 0);   // Enter, fire, pad A
+                   | (input.is_pressed(Input::START) || (js & JOYSRC_FIRE) ? 16 : 0)    // Enter, fire, pad A
+                   | (input.escape_down() ? 32 : 0);                                       // Escape: back
     int scripted = 0;
 #ifdef MENU_SCRIPT
     // Test aid: presses keys by itself - OPTIONS, 30 pictures/s, 75 % of the lines, shadows near
@@ -396,15 +397,16 @@ int OptMenu::tick()
     }
     else if (page == 2)
     {
-        // credits: Enter / fire goes back
-        if (hit & 16) { credits_music(false); page = 0; osoundint.queue_sound(sound::BEEP1); }
+        // credits: Enter / fire / Escape go back
+        if (hit & 48) { credits_music(false); page = 0; osoundint.queue_sound(sound::BEEP1); }
     }
     else
     {
         if (hit & 1) { cursor = (cursor + NLINES - 1) % NLINES; osoundint.queue_sound(sound::BEEP1); }
         if (hit & 2) { cursor = (cursor + 1) % NLINES; osoundint.queue_sound(sound::BEEP1); }
         if ((hit & 12) && cursor < L_SAVE) { change(cursor, (hit & 4) ? -1 : 1); osoundint.queue_sound(sound::BEEP1); }
-        if (hit & 16)
+        if (hit & 32) { page = 0; main_cursor = 0; osoundint.queue_sound(sound::BEEP1); }   // Escape: back
+        else if (hit & 16)
         {
             if (cursor == L_SAVE)
             {
