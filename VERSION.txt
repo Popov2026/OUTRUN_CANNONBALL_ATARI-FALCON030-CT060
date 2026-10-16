@@ -1,8 +1,17 @@
-Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.35 beta
+Cannonball Atari Falcon 030 / CT60 / CT63 port - v0.36 beta
 
 Built with GCC (m68k-atari-mint-g++ 4.6.4) - see build_atari.sh / build_release.sh.
 
-Changes since v0.33 beta:
+Changes since v0.35 beta:
+  Game
+  - scenery = 0 (SCENERY OFF in the menu) no longer removes the
+    checkpoints: the extra time is given when the car passes the top of
+    the checkpoint sign, a roadside object, so with scenery = 0 no
+    checkpoint was ever reached and the game always ran out of time. The
+    start lights and the checkpoint signs are now kept whatever the
+    setting; the other roadside objects are still left out.
+
+Changes in v0.35 beta (since v0.33 beta):
   Menu
   - The game starts on a menu over the OutRun logo and a scrolling road
     (F1 brings it back during the game): PLAY (selected), OPTIONS and

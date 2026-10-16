@@ -1,11 +1,17 @@
 **English** | [Français](#français)
 
-## v0.35 beta — options menu
+## v0.36 beta — checkpoints back with SCENERY OFF
 
 No ROMs and no `.mod` music are included: add your own ROM set (OutRun revision B) in `roms/`, and
 optionally your `.mod` files in `Music/` (see the README).
 
-### What's new since v0.33 beta
+### What's new since v0.35 beta
+- **Checkpoints work again with `scenery = 0` (SCENERY OFF in the menu).** The extra time is given when the car
+  passes the top of the checkpoint sign, a roadside object: with the scenery off no sign was created, so no
+  checkpoint was ever reached and the game always ran out of time. The start lights and the checkpoint signs are
+  now kept whatever the setting; the other roadside objects are still left out.
+
+### v0.35 beta — options menu (what's new since v0.33 beta)
 - **A menu at start-up**, over the OutRun logo and a scrolling road (**F1** brings it back during the game):
   **PLAY** (selected), **OPTIONS** and **CREDITS**.
 - **OPTIONS**: the `outrun.ini` options that apply at once, changed live — pictures per second (AUTO, 30, 25,
@@ -76,12 +82,19 @@ Tested in Hatari (Falcon 030 and 68060 with DSP emulation) and by users on Hatar
 
 ## Français
 
-## v0.35 bêta — menu des options
+## v0.36 bêta — les checkpoints reviennent avec SCENERY OFF
 
 Aucune ROM ni musique `.mod` n'est incluse : ajoute ton propre jeu de ROMs (OutRun révision B) dans `roms/`,
 et éventuellement tes `.mod` dans `Music/` (voir le README).
 
-### Nouveautés depuis la v0.33 bêta
+### Nouveautés depuis la v0.35 bêta
+- **Les checkpoints marchent de nouveau avec `scenery = 0` (SCENERY OFF dans le menu).** Le temps en plus est donné
+  quand la voiture passe sous le haut du panneau CHECKPOINT, qui est un objet du bord de route : décor coupé, aucun
+  panneau n'était créé, donc aucun checkpoint n'était atteint et le temps finissait toujours par manquer. Les feux
+  de départ et les panneaux de checkpoint sont maintenant gardés quel que soit le réglage ; les autres objets du
+  bord de route restent supprimés.
+
+### v0.35 bêta — menu des options (nouveautés depuis la v0.33 bêta)
 - **Un menu au démarrage**, sur le logo OutRun et une route qui défile (**F1** le rappelle pendant le jeu) :
   **PLAY** (sélectionné), **OPTIONS** et **CREDITS**.
 - **OPTIONS** : les options de `outrun.ini` qui s'appliquent tout de suite, modifiées en direct — images par
