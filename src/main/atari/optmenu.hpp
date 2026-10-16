@@ -8,8 +8,9 @@
     detail, scenery, shadows, music, joystick buttons), can save them into
     outrun.ini, and starts the game.
 
-    The first page has PLAY (selected) and OPTIONS, which opens the options
-    page. There up / down (keys or joystick) pick a line, left / right change
+    The first page has PLAY (selected), OPTIONS, which opens the options
+    page, and CREDITS (thanks, scrolling under the logo; Enter / fire goes
+    back). There up / down (keys or joystick) pick a line, left / right change
     it, Enter or fire (pad A) steps it to the next value; SAVE SETTINGS
     writes outrun.ini, BACK goes back to PLAY / OPTIONS.
 

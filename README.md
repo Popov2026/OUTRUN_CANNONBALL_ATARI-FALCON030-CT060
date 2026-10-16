@@ -187,8 +187,8 @@ These ports take a Jaguar pad, or a plain joystick on an adapter:
 ## Options menu
 
 The game starts on a menu over the OutRun logo and a scrolling road (F1 brings it back during the
-game): **PLAY** (selected: Return or fire starts the game) and **OPTIONS** below it, which opens
-the options page. There ↑ / ↓ (keys or joystick) pick a line, ← / → change it, Return or fire
+game): **PLAY** (selected: Return or fire starts the game), **OPTIONS** below it, which opens
+the options page, and **CREDITS**, the thanks scrolling under the logo. There ↑ / ↓ (keys or joystick) pick a line, ← / → change it, Return or fire
 steps it to the next value; **BACK** goes back to PLAY / OPTIONS. The options page changes the options that take effect at once: pictures per second (AUTO, 30, 25, 20, 15, 10,
 7.5), lines drawn (100, 75, 67, 50 %), road detail, scenery, shadows (all, near ones only, none),
 music, and what the joystick's up / down / fire / pad buttons do. **SAVE SETTINGS** writes them
@@ -439,7 +439,14 @@ Feedback is welcome, especially from real hardware (original Falcon 030, CT60/CT
 - **DSPMOD 3.4**: bITmASTER of TCE.
 - **YM2151 emulation**: Jarek Burczynski (MAME), as used by Cannonball; the DSP56001 FM
   program follows it exactly.
+- **OutRun** © 1986 SEGA AM2: Yu Suzuki and the AM2 team, music by Hiroshi Kawaguchi.
+- **Toolchain**: Vincent Rivière's `m68k-atari-mint` GCC 4.6.4 cross compiler. Development was
+  done under Cygwin, with the compiler installed in `/opt/cross-mint`.
+- **Martial Daviaud**, for his precious advice and tests.
+- **Claude** (Anthropic), for its help with the code.
 - **Atari Falcon port** (Falcon 030 / CT60 / CT63): Popov2026.
+
+The same thanks scroll on the **CREDITS** page of the game's menu.
 
 This repository is distributed under the **Cannonball licence** ([`docs/license.txt`](docs/license.txt)):
 

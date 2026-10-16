@@ -191,8 +191,8 @@ Ces ports acceptent un pad Jaguar, ou un joystick classique branché sur un adap
 ## Menu des options
 
 Le jeu démarre sur un menu, sur le logo OutRun et une route qui défile (F1 le rappelle pendant le
-jeu) : **PLAY** (sélectionné : Entrée ou fire lance le jeu) et, en dessous, **OPTIONS**, qui ouvre
-la page des options. Là, ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent,
+jeu) : **PLAY** (sélectionné : Entrée ou fire lance le jeu), en dessous **OPTIONS**, qui ouvre
+la page des options, et **CREDITS**, les remerciements qui défilent sous le logo. Là, ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent,
 Entrée ou fire passe à la valeur suivante ; **BACK** revient à PLAY / OPTIONS. La page des options
 règle les options qui s'appliquent tout de suite : images par seconde (AUTO, 30,
 25, 20, 15, 10, 7,5), lignes calculées (100, 75, 67, 50 %), détail de la route, décor, ombres
@@ -451,7 +451,15 @@ Jaguar).
 - **DSPMOD 3.4** : bITmASTER de TCE.
 - **Émulation du YM2151** : Jarek Burczynski (MAME), telle qu'utilisée par Cannonball ; le
   programme FM DSP56001 la suit exactement.
+- **OutRun** © 1986 SEGA AM2 : Yu Suzuki et l'équipe AM2, musique de Hiroshi Kawaguchi.
+- **Chaîne de compilation** : le compilateur croisé `m68k-atari-mint` GCC 4.6.4 de Vincent
+  Rivière. Le développement a été fait sous Cygwin, avec le compilateur installé dans
+  `/opt/cross-mint`.
+- **Martial Daviaud**, pour ses précieux conseils et tests.
+- **Claude** (Anthropic), pour son aide sur le code.
 - **Portage Atari Falcon** (Falcon 030 / CT60 / CT63) : Popov2026.
+
+Les mêmes remerciements défilent dans la page **CREDITS** du menu du jeu.
 
 Ce dépôt est distribué sous la **licence Cannonball** ([`docs/license.txt`](docs/license.txt)) :
 

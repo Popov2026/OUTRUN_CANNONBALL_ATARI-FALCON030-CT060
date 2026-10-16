@@ -41,7 +41,24 @@ enum { L_PICTURES, L_LINES, L_ROAD, L_SCENERY, L_SHADOWS, L_MUSIC, L_ACCEL, L_BR
 static const char* LABELS[NLINES] = {
     "PICTURES PER SEC", "LINES DRAWN", "ROAD DETAIL", "SCENERY", "SHADOWS", "MUSIC",
     "JOY ACCELERATE", "JOY BRAKE", "JOY GEAR CHANGE", "SAVE SETTINGS", "BACK" };
-static const char* MAIN_LABELS[2] = { "PLAY", "OPTIONS" };
+static const char* MAIN_LABELS[3] = { "PLAY", "OPTIONS", "CREDITS" };
+
+// The credits page, scrolling up under the logo.
+static const char* CREDITS[] = {
+    "THANKS TO", "",
+    "OUTRUN  1986  SEGA AM2", "YU SUZUKI AND THE AM2 TEAM", "MUSIC  HIROSHI KAWAGUCHI", "",
+    "CANNONBALL", "ENGINE AND OUTRUN REVERSE ENGINEERING", "CHRIS WHITE AND THE CANNONBALL TEAM", "",
+    "VINCENT RIVIERE", "M68K-ATARI-MINT GCC 4.6.4", "CROSS COMPILER",
+    "DEVELOPED UNDER CYGWIN", "COMPILER IN OPT CROSS-MINT", "",
+    "YM2151 EMULATION", "JAREK BURCZYNSKI - MAME", "",
+    "DSP SOUNDTRACKER REPLAY", "SIMPLET - ABSTRACT", "",
+    "DSPMOD 3.4", "BITMASTER - TCE", "",
+    "PRECIOUS ADVICE AND TESTS", "MARTIAL DAVIAUD", "",
+    "AND CLAUDE", "", "",
+    "ATARI FALCON PORT", "POPOV2026", "", "", "" };
+static const int NCREDITS = sizeof(CREDITS) / sizeof(CREDITS[0]);
+static const int CREDIT_ROWS = 13;     // rows 14..26, under the logo
+static const int CREDIT_STEP = 24;     // game steps per row of scrolling
 
 // Picture rate: cadence (game steps per picture) or a steady fps (see options.hpp).
 static const struct { const char* name; int cadence, fps; } RATES[] = {
@@ -166,11 +183,24 @@ static void upper(char* s)
 void OptMenu::draw()
 {
     video.clear_text_ram();
+    if (page == 2)
+    {
+        // credits: one row up every CREDIT_STEP steps, round and round; BACK below
+        const int top = frame / CREDIT_STEP;
+        for (int r = 0; r < CREDIT_ROWS; r++)
+        {
+            const char* s = CREDITS[(top + r) % NCREDITS];
+            if (*s) ohud.blit_text_new(20 - (int)strlen(s) / 2, 14 + r, s, r == 0 ? ohud.GREY : ohud.GREEN);
+        }
+        ohud.blit_text_new(18, 27, "BACK", ohud.PINK);
+        video.write_text32(ohud.translate(15, 27), roms.rom0.read32(TILES_MINICARS1));
+        return;
+    }
     if (page == 0)
     {
-        for (int i = 0; i < 2; i++)
+        for (int i = 0; i < 3; i++)
         {
-            const int x = 20 - (int)strlen(MAIN_LABELS[i]) / 2, y = 18 + 2 * i;
+            const int x = 20 - (int)strlen(MAIN_LABELS[i]) / 2, y = 17 + 2 * i;
             ohud.blit_text_new(x, y, MAIN_LABELS[i], i == main_cursor ? ohud.PINK : ohud.GREEN);
             if (i == main_cursor)
                 video.write_text32(ohud.translate(x - 3, y), roms.rom0.read32(TILES_MINICARS1));
@@ -244,19 +274,37 @@ bool OptMenu::tick()
         if (frame == 30 || frame == 200 || frame == 260) g_take_screenshot = true;
     }
 #endif
+#ifdef MENU_CREDITS_TEST
+    // Test aid: opens CREDITS and takes screenshots of it scrolling.
+    {
+        static int t = 0;
+        t++;
+        if (t == 40 || t == 50) scripted = 2;
+        if (t == 60) scripted = 16;
+        extern bool g_take_screenshot;
+        if (t == 80 || t == 300 || t == 600) g_take_screenshot = true;
+    }
+#endif
     const int hit = (dirs | scripted) & ~last_dirs;
     last_dirs = dirs;
 
     bool play = false;
     if (page == 0)
     {
-        // PLAY / OPTIONS
-        if (hit & 3) { main_cursor ^= 1; osoundint.queue_sound(sound::BEEP1); }
+        // PLAY / OPTIONS / CREDITS
+        if (hit & 1) { main_cursor = (main_cursor + 2) % 3; osoundint.queue_sound(sound::BEEP1); }
+        if (hit & 2) { main_cursor = (main_cursor + 1) % 3; osoundint.queue_sound(sound::BEEP1); }
         if (hit & 16)
         {
             if (main_cursor == 0) play = true;
-            else { page = 1; cursor = 0; osoundint.queue_sound(sound::BEEP1); }
+            else if (main_cursor == 1) { page = 1; cursor = 0; osoundint.queue_sound(sound::BEEP1); }
+            else { page = 2; frame = 0; osoundint.queue_sound(sound::BEEP1); }
         }
+    }
+    else if (page == 2)
+    {
+        // credits: Enter / fire goes back
+        if (hit & 16) { page = 0; main_cursor = 0; osoundint.queue_sound(sound::BEEP1); }
     }
     else
     {
