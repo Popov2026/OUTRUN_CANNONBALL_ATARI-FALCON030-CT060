@@ -195,7 +195,7 @@ la page des options, **CREDITS**, les remerciements qui défilent sous le logo s
 **EXIT**, qui quitte le jeu. Là, ↑ / ↓ (touches ou joystick) choisissent une ligne, ← / → la changent,
 Entrée ou fire passe à la valeur suivante ; **BACK** revient à PLAY / OPTIONS. La page des options
 règle les options qui s'appliquent tout de suite : images par seconde (AUTO, 30,
-25, 20, 15, 10, 7,5), lignes calculées (100, 75, 67, 50 %), détail de la route, décor, ombres
+25, 20, 15, 10, 7,5), détail de la route, décor, ombres
 (toutes, proches seulement, aucune), musique, et le rôle du haut / bas / fire / boutons de pad du
 joystick. **SAVE SETTINGS** les écrit dans `outrun.ini` (seules leurs valeurs changent : les
 commentaires et les autres lignes restent). Les autres options (son, FM

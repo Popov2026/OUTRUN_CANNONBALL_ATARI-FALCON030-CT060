@@ -61,11 +61,17 @@ static void build_rows(int vscale)
     atari_frame_rows();
 }
 
-// vscale changed while running (atari/optmenu.cpp).
+// vscale changed while running.
 void atari_set_vscale(int vscale)
 {
     atari_opt.vscale = vscale;
     build_rows(vscale);
+}
+
+// The menu (atari/optmenu.cpp) is drawn with every line whatever vscale is; false: vscale again.
+void atari_all_rows(bool all)
+{
+    build_rows(all ? 100 : atari_opt.vscale);
 }
 
 // Stores the number in `text` into *dst if it is readable and within lo..hi; otherwise the

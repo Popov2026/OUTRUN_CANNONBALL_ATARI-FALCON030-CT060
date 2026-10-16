@@ -4,8 +4,8 @@
     Options menu of the Atari port: shown at start-up (and with Escape or F1 during the
     game), over the OutRun logo and the scrolling road of Cannonball's own
     menu (frontend/menu.cpp, not built here). It changes the outrun.ini
-    options that take effect at once (picture rate, lines drawn, road
-    detail, scenery, shadows, music, joystick buttons), can save them into
+    options that take effect at once (picture rate, road detail, scenery,
+    shadows, music, joystick buttons), can save them into
     outrun.ini, and starts the game.
 
     The first page has PLAY (selected), OPTIONS, which opens the options

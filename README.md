@@ -190,7 +190,7 @@ game): **PLAY** (selected: Return or fire starts the game), **OPTIONS** below it
 the options page, **CREDITS**, the thanks scrolling under the logo to Last Wave, and **EXIT**,
 which quits. There ↑ / ↓ (keys or joystick) pick a line, ← / → change it, Return or fire
 steps it to the next value; **BACK** goes back to PLAY / OPTIONS. The options page changes the options that take effect at once: pictures per second (AUTO, 30, 25, 20, 15, 10,
-7.5), lines drawn (100, 75, 67, 50 %), road detail, scenery, shadows (all, near ones only, none),
+7.5), road detail, scenery, shadows (all, near ones only, none),
 music, and what the joystick's up / down / fire / pad buttons do. **SAVE SETTINGS** writes them
 into `outrun.ini` (only their values change: the comments and the other lines stay). The other options (sound, FM on the DSP, `.mod` music...) stay in `outrun.ini`:
 they are only read at start-up.

@@ -42,9 +42,9 @@ static const uint16_t HORIZON_DEST = 0x3A0;
 static const int      ROAD_SPEED   = 50;      // config.menu.road_scroll_speed's default
 
 // first page: PLAY, OPTIONS; the options page:
-enum { L_PICTURES, L_LINES, L_ROAD, L_SCENERY, L_SHADOWS, L_MUSIC, L_ACCEL, L_BRAKE, L_GEAR, L_SAVE, L_BACK, NLINES };
+enum { L_PICTURES, L_ROAD, L_SCENERY, L_SHADOWS, L_MUSIC, L_ACCEL, L_BRAKE, L_GEAR, L_SAVE, L_BACK, NLINES };
 static const char* LABELS[NLINES] = {
-    "PICTURES PER SEC", "LINES DRAWN", "ROAD DETAIL", "SCENERY", "SHADOWS", "MUSIC",
+    "PICTURES PER SEC", "ROAD DETAIL", "SCENERY", "SHADOWS", "MUSIC",
     "JOY ACCELERATE", "JOY BRAKE", "JOY GEAR CHANGE", "SAVE SETTINGS", "BACK" };
 static const char* MAIN_LABELS[] = { "PLAY", "OPTIONS", "CREDITS", "EXIT" };
 static const int NMAIN = sizeof(MAIN_LABELS) / sizeof(MAIN_LABELS[0]);
@@ -70,8 +70,6 @@ static const int CREDIT_PAUSE = 90;                  // game steps (3 s) before 
 static const struct { const char* name; int cadence, fps; } RATES[] = {
     { "AUTO", 0, 0 }, { "30", 1, 0 }, { "25", 0, 25 }, { "20", 0, 20 }, { "15", 2, 0 }, { "10", 3, 0 }, { "7.5", 4, 0 } };
 static const int NRATES = sizeof(RATES) / sizeof(RATES[0]);
-static const int VSCALES[] = { 100, 75, 67, 50 };
-static const int NVSCALES = sizeof(VSCALES) / sizeof(VSCALES[0]);
 // Joystick sources for each action (atari/options.hpp JOYSRC_*), the default first.
 static const int ACCELS[] = { JOYSRC_UP | JOYSRC_B, JOYSRC_UP, JOYSRC_B, JOYSRC_FIRE, JOYSRC_UP | JOYSRC_FIRE, JOYSRC_C };
 static const int BRAKES[] = { JOYSRC_DOWN | JOYSRC_C, JOYSRC_DOWN, JOYSRC_C, JOYSRC_B, JOYSRC_DOWN | JOYSRC_B };
@@ -110,6 +108,7 @@ void OptMenu::init()
     video.clear_text_ram();
     video.tile_layer->restore_tiles();
     outline_glyphs(true);
+    atari_all_rows(true);   // every line drawn in the menu (vscale makes its text unreadable)
     ologo.enable(LOGO_Y);
 
     // palette, road and colours for the background, as frontend/menu.cpp
@@ -155,9 +154,6 @@ void OptMenu::change(int line, int dir)
             atari_opt.fps = RATES[i].fps;
             break;
         }
-        case L_LINES:
-            atari_set_vscale(VSCALES[step(find(VSCALES, NVSCALES, atari_opt.vscale), NVSCALES, dir)]);
-            break;
         case L_ROAD:    atari_opt.road_hres = !atari_opt.road_hres; break;
         case L_SCENERY: atari_opt.scenery = !atari_opt.scenery; break;
         case L_SHADOWS:
@@ -284,7 +280,6 @@ void OptMenu::draw()
                 else sprintf(value, "%d", atari_opt.fps ? atari_opt.fps : 30 / (atari_opt.cadence ? atari_opt.cadence : 1));
                 break;
             }
-            case L_LINES:   sprintf(value, "%d", atari_opt.vscale); strcat(value, " PERCENT"); break;
             case L_ROAD:    strcpy(value, atari_opt.road_hres ? "HALF" : "FULL"); break;
             case L_SCENERY: strcpy(value, atari_opt.scenery ? "ON" : "OFF"); break;
             case L_SHADOWS: strcpy(value, !atari_opt.shadows ? "OFF" : (atari_opt.shadow_min_z ? "NEAR" : "ALL")); break;
@@ -437,6 +432,7 @@ int OptMenu::tick()
         // first, so that it does not show at its unshifted place before the game draws its own
         video.clear_text_ram();
         outline_glyphs(false);
+        atari_all_rows(false);   // outrun.ini's vscale again
         for (int y = 0; y < 28; y++) g_text_dx[y] = 0;
         g_text_scroll_top = g_text_scroll_bot = -1;
     }

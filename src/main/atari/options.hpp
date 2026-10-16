@@ -115,6 +115,8 @@ extern AtariOptions atari_opt;
 void atari_load_options(const char* filename);
 // vscale changed while running (the row tables are rebuilt).
 void atari_set_vscale(int vscale);
+// true: every row drawn (the menu), false: vscale's rows again.
+void atari_all_rows(bool all);
 // Writes the options the menu changes (atari/optmenu.cpp) into the file: their values are
 // replaced in place, the rest of the file (comments, other keys) stays as it is; keys that are
 // not there are added at the end. False if the file could not be written.
